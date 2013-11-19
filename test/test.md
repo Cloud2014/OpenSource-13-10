@@ -1,378 +1,2294 @@
-CloudStack 和OpenStack 网络设计
+[![Modal Window
+Close](/assets/imgs/2013/ws2013-modal-window-close.jpg)](#)
 
-一、CloudStack网络设计
+[![Websense](/assets/imgs/2013/ws2013-global-nav-wbsn-logo.png)](/content/Home.aspx)
 
-CloudStack中根据不同的数据流量类型设计了管理，公共，客户及存储网络，可以简称为PMGS
-( Public, Management, Guest, Storage) 网络．\
+-   [MyWebsense Login](/content/mywebsense-subscriptions.aspx)
+-   [Buy & Renew](websense-try-buy.aspx)
+-   [English  (US)](#)
+    -   [English (US)](/content/Home.aspx)
+    -   [English (AU)](/content/Regional/Australia/Home.aspx)
+    -   [English (India)](/content/regional/india/Home.aspx)
+    -   [English (UK)](/content/Regional/UnitedKingdom/Home.aspx)
+    -   [Español (LatAm)](http://es.websense.com/)
+    -   [Français](http://fr.websense.com/content/Home.aspx)
+    -   [Italiano](http://it.websense.com/content/Home.aspx)
+    -   [Português (Brasil)](http://pt.websense.com/content/home.aspx)
+    -   [Deutsch](http://de.websense.com/content/Home.aspx)
+    -   [日本語](/content/Regional/Japan/Home.aspx)
+    -   [中国 (simplified)](http://cn.websense.com/)
+    -   [中國 (traditional)](http://tw.websense.com/)
 
-Public：当虚拟机需要访问Internet或外部网络时，需要通过公共网络；这就说明客户虚拟机必须被分配某种形式的外网IP．用户可以在CloudStack的UI上获得一个IP来做NAT映射，也可以在Guest与Public之间做负载均衡．所有的Hypervisor都需要共享Public
-VLan以保证虚拟机对外的访问．\
+-   
 
-Management：CloudStack内部资源相互通信会产生Management流量，这些流量包括管理服务器节点与Hypervisor集群之间的通信，与系统虚拟机之间的通信或与其它组件之间的通信等；集群规模较小时管理流量只占用很少的带宽．\
+\
 
-Guest：最终用户运行CloudStack创建的虚拟机实例时产生Guest流量，虚拟机实例之间的相互通信通过客户网络．\
+\
 
-Storage：主存储与Hypervisor之间互连互通的流量；主存储与二级存储之间也会产生Stroage流量，比如虚拟机模板和快照的搬移．
+-   [Products](/content/websense-products.aspx)
 
-CloudStack中网络模式可以分成基本网络和高级网络两种．其中MGS(Management，Guest，Storage)三种网络对于基本网络及高级网络通用．而P(Public)则只是针对高级网络才存在．可以对比下图：
+    #### [TRITON® Products](/content/websense-triton-security-products.aspx)
 
-[![基本网络](OpenStack-CloudStack%20Network%20Design_files/image001.png)](http://www.cloudstack-china.org/wp-content/uploads/2012/07/basic-network.png)[![高级网络](OpenStack-CloudStack%20Network%20Design_files/image002.png)](http://www.cloudstack-china.org/wp-content/uploads/2012/07/adv-network.png)
+    -   [TRITON
+        Enterprise](/content/websense-triton-enterprise-features.aspx)
+    -   [TRITON Security Gateway
+        Anywhere](/content/websense-triton-security-gateway-anywhere-features.aspx)
+    -   [TRITON Security
+        Gateway](/content/websense-triton-web-security-gateway-features.aspx)
+    -   [TRITON ThreatScope](/content/websense-threatscope.aspx)
 
- 
+    #### [Web Security](/content/websense-web-security-products.aspx)
 
-基本网络 vs 高级网络
+    -   [Web Security Gateway
+        Anywhere](/content/web-security-gateway-anywhere-features.aspx)
+    -   [Web Security
+        Gateway](/content/web-security-gateway-features.aspx)
+    -   [Cloud Web Security
+        Gateway](/content/cloud-web-security-gateway-features.aspx)
+    -   [ACE in the Cloud](/content/ace-in-the-cloud-features.aspx)
+    -   [Web Security](/content/web-security-features.aspx)
+    -   [Cloud Web Security](/content/cloud-web-security-features.aspx)
+    -   [Web Filter](/content/web-filter-features.aspx)
+    -   [TRITON
+        RiskVision](/content/websense-triton-riskvision-features.aspx)
 
-这里强烈建议不同的流量类型单独设置网卡，而对于存储网络最好用网卡绑定(NIC
-bonding)，这样在系统的稳定性和性能方面都会有极大的提高．
+    #### [Email Security](/content/websense-email-security-products.aspx)
 
-基本网络模式下IP地址规划\
+    -   [Email Security Gateway
+        Anywhere](/content/email-security-gateway-anywhere-features.aspx)
+    -   [Email Security
+        Gateway](/content/email-security-gateway-features.aspx)
+    -   [Cloud Email Security and Content
+        Control](/content/cloud-email-security-and-content-control-features.aspx)
 
-如果打算使用基本网络模式建立CloudStack云计算环境，那就意味着客户虚拟机实例将会和CloudStack，Hypervisor整体架构拥有相同的CIDR段．这样在规划IP地址时每个资源域都要预留足够的IP地址．假设你规划有8个资源域，每个资源域容纳2000台虚拟机，那IP地址CIDR可规划成192.168.0.0/20，这样能保证最多16个资源域，每个资源域IP数量有2\^12-1=4095个，除去机架，系统虚拟机，主机占用的IP，提供2000个VM的IP绰绰有余．\
- 注：具体环境中采用哪个段的IP地址可能要与IT环境相一致．
+    #### [Data Security](/content/websense-data-security-products.aspx)
 
-高级网络模式下的IP地址规划\
- 高级网络模式相对来说较为复杂,在这种模式下,每个账号都要分配：\
- 1. 公网IP，这为了保证对外网的访问，通常这个IP设置在虚拟路由器上\
- 2. Guest网络IP范围，比如默认的：10.1.1.0/24\
- 3. Guest网络隔离的VLan ID\
+    -   [Data Security
+        Suite](/content/data-security-suite-features.aspx)
+    -   [Data Security
+        Gateway](/content/data-security-gateway-features.aspx)
+    -   [Data Discover](/content/data-discover-features.aspx)
+    -   [Data Endpoint](/content/data-endpoint-features.aspx)
 
-以上默认的Guest网络IP范围对于所有账户都是一样的，只有管理员可以进行更改使不同账号使用不同的的Guest网络IP范围．\
+    #### [Mobile Security](/content/websense-mobile-security-products.aspx)
 
-一个账户下的客户虚拟机实例通过它专属的VLan进行相互之间的访问或与这个账户的虚拟路由器互通．客户虚拟机可以运行在资源域内任意一台主机上；通过二层交换的VLan端口汇聚(Trunk)功能，可以保证同一个VLan下所有的虚拟机互连互通．
+    -   [TRITON Mobile
+        Security](/content/triton-mobile-security-features.aspx)
 
-预留系统IP地址\
+    #### [Services](/content/websense-services.aspx)
 
-当配置一个机架时，需要为系统虚拟机保留一些IP地址，这部分是管理网络也称为私有IP地址.通常情况下10个IP地址对一个机架是足够用了．这些IP地址会被SSVM(二级存储系统虚机)和CPVM(控制台系统虚机)．如果系统很庞大，CPVM会被自动部署多台来分担负载.
+    -   [CyberSecurity Intelligence
+        (CSI)](/content/cybersecurity-intelligence-services.aspx)
+    -   [Training and Technical
+        Certification](/content/training-and-technical-certification.aspx)
+    -   [Certified TRITON Integrator
+        (CTI)](/content/certified-triton-integrator.aspx)
 
-在整个云计算环境中，所有的主机和系统虚拟机都必须有一个唯一的IP地址，因此在添加新的资源域时，也需要考虑当前环境中资源域的网络规划．
+    \
 
-本地链路IP(Link-Local)\
+    [Learn
+    more](/content/websense-triton-riskvision-bundle.aspx?intcmp=mm-product-en-riskvision)
 
-在使用XenServer或KVM作为主机时，系统虚拟机(SSVM，CPVM，V-Router)会被分配一个本地链路的IP地址．这个地址的CIDR是169.254.0.0/16;这样看来本地链路的IP地址会有2\^16-1=65535个，目前来看不太可能超过这个范围．如果一个机架只包含XenServer或KVM的集群，那可以分配给这个机架下的主机一个Ｃ类段的地址形如：x.x.x.x/24．如果是VMWare的集群，给机架分配的IP地址范围会被系统虚拟机占用一些那么就要考虑比Ｃ类段大一些的范围作为机架的IP地址段，形如：x.x.x.x/21,这样会有2\^11-2=2046个IP供给主机，存储以及系统虚拟机使用．
+    ![Captura do Triton
+    Box](http://pt.websense.com/assets/imgs/2013/ws2013-mm-triton-boxshot.jpg)
 
-虚拟机隔离\
- 在同一个资源域内，虚拟机有两种方式进行隔离：安全组和VLAN．\
- 安全组隔离\
+    #### 10 novas defesas,\
+     7 inovações de segurança,\
+     1 arquitetura unificada. {.left}
 
-当使用安全组时，每一个创建的账户都会有一个默认的安全组生成，以保证通过这个账户创建的虚拟机实例默认要以互连互通．当用户创建虚拟机实例后，可以对这些虚拟机实例设定一个或多个安全组．\
+    \
 
-用户可以在任意时间创建额外的安全组，但正在运行中的此用户的实例不能应用新建的安全组规则，需要关机后更改设置．\
+    [Saiba
+    mais](/content/TRITONseven7.aspx?intcmp=mm-product-pt-triton77)
 
-同一个安全组下的用户虚拟机实例可以相互通信．安全组通过Ingress和Egress来进行流量控制．\
+    ![Captura do Triton
+    Box](http://pt.websense.com/assets/imgs/2013/ws2013-mm-triton-boxshot.jpg)
+
+    #### 10 nuevas defensas,\
+     7 avances en seguridad,\
+     1 arquitectura unificada. {.left}
+
+    \
+
+    [Conozca
+    más](/content/TRITONseven7.aspx?intcmp=mm-product-es-triton77)
+
+    ![Captura do Triton
+    Box](http://pt.websense.com/assets/imgs/2013/ws2013-mm-triton-boxshot.jpg)
+
+    #### 10 nouvelles défenses,\
+     7 découvertes capitales en termes de sécurité,\
+     1 architecture unifiée. {.left}
+
+    \
+
+    [En savoir
+    plus](/content/TRITONseven7.aspx?intcmp=mm-product-fr-triton77)
+
+    ![Abbildung einer Triton
+    Box](http://de.websense.com/assets/imgs/2013/ws2013-mm-triton-boxshot.jpg)
+
+    #### 10 neue Abwehrmechanismen,\
+     7 Neuerungen im Sicherheitsbereich,\
+     1 einheitliche Architektur. {.left}
+
+    \
+
+    [Erfahren sie
+    mehr](/content/TRITONseven7.aspx?intcmp=mm-product-de-triton77)
+
+    ![Immagine confezione
+    Triton](http://it.websense.com/assets/imgs/2013/ws2013-mm-triton-boxshot.jpg)
+
+    #### 10 nuove difese,\
+     7 innovazioni per la sicurezza,\
+     1 architettura unificata. {.left}
+
+    \
+
+    [Per saperne di
+    più](/content/TRITONseven7.aspx?intcmp=mm-product-it-triton77)
+
+    ![Triton
+    包装盒图像](http://cn.websense.com/assets/imgs/2013/ws2013-mm-triton-boxshot.jpg)
+
+    #### 10 全新防御、\
+     7 安全突破、\
+     一个统一架构。 {.left}
+
+    \
+
+    [更多内容](/content/TRITONseven7.aspx?intcmp=mm-product-sch-triton77)
+
+    ![Triton
+    產品外盒圖片](http://tw.websense.com/assets/imgs/2013/ws2013-mm-triton-boxshot.jpg)
+
+    #### 10 種新型防禦功能，\
+     7大安全防禦突破性技術，\
+     一個統一的安全防禦架構。 {.left}
+
+    \
+
+    [更多内容](/content/TRITONseven7.aspx?intcmp=mm-product-tch-triton77)
+
+    #### [Technologies](/content/websense-technologies.aspx)
+
+    -   [ACE (Advanced Classification
+        Engine)](/content/websense-advanced-classification-engine.aspx)
+    -   [ThreatSeeker Intelligence
+        Cloud](/content/websense-threatseeker-network.aspx)
+    -   [Master Database](/content/websense-master-database.aspx)
+
+    #### [Platforms](/content/websense-platforms.aspx)
+
+    -   [Software](/content/software-platforms.aspx)
+    -   [Appliance](/content/appliances-platforms.aspx%20)
+
+    -   [Cloud](/content/cloud-platforms.aspx)
+    -   [Hybrid](/content/hybrid-platforms.aspx)
+
+-   [Solutions](/content/solutions-center.aspx)
+
+    #### Solutions by Industry
+
+    -   [Education: K-12](/content/k-12-education-solutions.aspx)
+    -   [Education: Higher](/content/higher-education-solutions.aspx)
+    -   [Federal](/content/federal-solutions.aspx)
+    -   [Finance and
+        Banking](/content/finance-and-banking-solutions.aspx)
+    -   [Health Care](/content/health-care-solutions.aspx)
+
+    -   [Grau de instrução:
+        superior](/content/higher-education-solutions.aspx)
+    -   [Finanças e bancos](/content/finance-and-banking-solutions.aspx)
+    -   [Saúde](/content/health-care-solutions.aspx)
+
+    -   [Educación: superior](/content/higher-education-solutions.aspx)
+    -   [Bancos y finanzas](/content/finance-and-banking-solutions.aspx)
+    -   [Atención de la salud](/content/health-care-solutions.aspx)
+
+    -   [Enseignement
+        supérieur](/content/higher-education-solutions.aspx)
+    -   [Banque et finance](/content/finance-and-banking-solutions.aspx)
+    -   [Santé](/content/health-care-solutions.aspx)
+
+    -   [Bildungshintergrund: ab
+        Abitur](/content/higher-education-solutions.aspx)
+    -   [Finanzen und
+        Banken](/content/finance-and-banking-solutions.aspx)
+    -   [Gesundheitswesen](/content/health-care-solutions.aspx)
+
+    -   [Istruzione: Superiore e
+        università](/content/higher-education-solutions.aspx)
+    -   [Banche e finanza](/content/finance-and-banking-solutions.aspx)
+    -   [Sanità](/content/health-care-solutions.aspx)
+
+    -   [教育：高等](/content/higher-education-solutions.aspx)
+    -   [金融和银行](/content/finance-and-banking-solutions.aspx)
+    -   [医疗](/content/health-care-solutions.aspx)
+
+    -   [教育：高等](/content/higher-education-solutions.aspx)
+    -   [金融與銀行](/content/finance-and-banking-solutions.aspx)
+    -   [保健](/content/health-care-solutions.aspx)
+
+    #### Solutions by Need
+
+    -   [Social Media](/content/social-web-security-solutions.aspx%20)
+    -   [Compliance](/content/regulatory-compliance-solutions.aspx)
+
+    #### Solutions by Size
+
+    -   [Small and Medium Business](/content/smb-solutions.aspx%20)
+    -   [Enterprise](/content/enterprise-solutions.aspx%20)
+
+    #### Is 16 blades big\
+     enough?
+
+    [Learn
+    more](/content/x10g-applances.aspx?intcmp=mm-solutions-en-x10g)
+
+    [Saiba
+    mais](/content/x10g-applances.aspx?intcmp=mm-solutions-pt-x10g)
+
+    [Conozca
+    más](/content/x10g-applances.aspx?intcmp=mm-solutions-es-x10g)
+
+    [En savoir
+    plus](/content/x10g-applances.aspx?intcmp=mm-solutions-fr-x10g)
+
+    [Erfahren sie
+    mehr](/content/x10g-applances.aspx?intcmp=mm-solutions-de-x10g)
+
+    [Per saperne di
+    più](/content/x10g-applances.aspx?intcmp=mm-solutions-it-x10g)
+
+    [更多内容](/content/x10g-applances.aspx?intcmp=mm-solutions-sch-x10g)
+
+    [更多内容](/content/x10g-applances.aspx?intcmp=mm-solutions-tch-x10g)
+
+    ![](http://www.websense.com/assets/imgs/2013/ws2013-mm-x10g-appliance-shot.png)
+
+-   [Downloads](/content/websense-downloads.aspx)
+
+    #### Free Trials and Demos
+
+    Evaluate Websense products by watching demos and installing
+    evaluation software.
+
+    \
+     [Learn more](/content/websense-free-trials.aspx) \
+     \
+
+    #### Case Studies
+
+    Learn how Websense solutions help keep our customer safe, secure and
+    productive.
+
+    \
+
+    [Read now](http://community.websense.com/blogs/cs)
+
+    [Leia agora](http://community.websense.com/blogs/cs)
+
+    [Conozca más](http://community.websense.com/blogs/cs)
+
+    [En savoir plus](http://community.websense.com/blogs/cs)
+
+    [Erfahren sie mehr](http://community.websense.com/blogs/cs)
+
+    [Per saperne di più](http://community.websense.com/blogs/cs)
+
+    [更多内容](http://community.websense.com/blogs/cs)
+
+    [更多内容](http://community.websense.com/blogs/cs)
+
+    #### Other Downloads
+
+    -   [Webcasts](/content/websense-webinars.aspx)
+    -   [White Papers](/content/websense-white-papers.aspx)
+    -   [Brochures](/content/websense-brochures.aspx)
+    -   [Videos](/content/websense-videos.aspx)
+    -   [Demos](/content/websense-demos.aspx)
+    -   [Datasheets](/content/websense-datasheets.aspx)
+    -   [Industry Analyst
+        Reports](/content/industry-analyst-reports.aspx)
+    -   [Infographics](/content/infographics.aspx)
+
+    ##### Gartner
+
+    [![](http://reddot.websense.com/assets/imgs/2013/ws2013-hp-promo-gartner-swg-thumb.png)\
+     Secure Web
+    Gateways](gartner-magic-quadrant-secure-web-gateways-2013.aspx?intcmp=hp-mm-downloads-en-gartner-swg-2013)\
+     \
+     [**Get the report
+    \>**](gartner-magic-quadrant-secure-web-gateways-2013.aspx?intcmp=hp-mm-downloads-en-gartner-swg-2013)
+
+    ##### Gartner
+
+    [![](http://reddot.websense.com/assets/imgs/2013/ws2013-hp-promo-gartner-thumb.png)\
+     Content-Aware
+    DLP](gartner-magic-quadrant-content-aware-data-loss-prevention-2013.aspx?intcmp=hp-downloads-en-gartner)\
+     \
+     [**Get the report
+    \>**](gartner-magic-quadrant-content-aware-data-loss-prevention-2013.aspx?intcmp=hp-downloads-en-gartner)
+
+    ##### Security Report
+
+    ![](http://www.websense.com/assets/imgs/2013/whitepaper-thumb-2013-threat-report.png)
+    \
+
+    [Websense 2013\
+     Threat
+    Report](/content/websense-2013-threat-report.aspx?intcmp=mm-downloads-en-2013ThreatReport)\
+     \
+     [**Get the report
+    \>**](/content/websense-2013-threat-report.aspx?intcmp=mm-downloads-en-2013ThreatReport)
+
+    [Websense 2013\
+     Threat
+    Report](/content/websense-2013-threat-report.aspx?intcmp=mm-downloads-pt-2013ThreatReport)
+
+    [Reporte de\
+     amenazas de\
+     Websense
+    2013](http://www.websense.com/content/websense-2013-threat-report.aspx?intcmp=mm-downloads-en-es-2013ThreatReport)
+
+    [Websense 2013\
+     Threat
+    Report](/content/websense-2013-threat-report.aspx?intcmp=mm-downloads-en-fr-2013ThreatReport)
+
+    [Websense 2013\
+     Threat
+    Report](/content/websense-2013-threat-report.aspx?intcmp=mm-downloads-de-2013ThreatReport)
+
+    [Report sulle\
+     minacce alla\
+     sicurezza Web\
+     di
+    Websense](/content/websense-2013-threat-report.aspx?intcmp=mm-downloads-it-2013ThreatReport)
+
+    [Websense 2013\
+     Threat
+    Report](http://www.websense.com/content/websense-2013-threat-report.aspx?intcmp=mm-downloads-en-sch-2013ThreatReport)
+
+    [Websense 2013\
+     Threat
+    Report](http://www.websense.com/content/websense-2013-threat-report.aspx?intcmp=mm-downloads-en-tch-2013ThreatReport)
+
+-   [Security Labs](http://securitylabs.websense.com/)
+
+    #### Resources
+
+    -   [Security Labs
+        Blog](http://community.websense.com/blogs/securitylabs/)
+    -   [Security Labs Home](http://securitylabs.websense.com/)
+    -   [Technical
+        Library](http://securitylabs.websense.com/content/about.aspx)
+
+    #### Current Security Data
+
+    -   [Attack Information
+        Center](http://securitylabs.websense.com/content/threatResource.aspx)
+    -   [Spam
+        Map](http://securitylabs.websense.com/content/spamMap.aspx)
+    -   [Threat
+        Map](http://securitylabs.websense.com/content/CrimewarePhishing.aspx)
+    -   [Security
+        Effectiveness](http://securitylabs.websense.com/content/ThreatUpdateCenter.aspx)
+    -   [Top
+        Exploits](http://securitylabs.websense.com/content/RealTime.aspx)
+    -   [Threat Scan
+        History](http://securitylabs.websense.com/content/ThreatseekerNetwork.aspx)
+
+    #### Unique Security Technologies
+
+    -   [ACE (Advanced Classification
+        Engine)](/content/websense-advanced-classification-engine.aspx)
+    -   [ThreatSeeker Intelligence
+        Cloud](/content/websense-threatseeker-network.aspx)
+    -   [Master Database](/content/websense-master-database.aspx)
+
+    #### Forensic Services – CyberSecurity Intelligence
+
+    -   [CSI: ACE Insight (Free Analysis Tool)](http://csi.websense.com)
+    -   [CSI:
+        On-Demand](/content/cybersecurity-intelligence-services.aspx)
+    -   [CSI: Live](/content/cybersecurity-intelligence-services.aspx)
+
+    ##### CSI: ACE Insight
+
+    [![](http://www.websense.com/assets/imgs/2013/ws2013-mm-seclabs-aceinsight.png)
+    \
+     Is that link safe?\
+     Check it before you click it.](http://csi.websense.com)\
+     \
+     [**Get your free analysis \>**](http://csi.websense.com)
+
+    ##### Security Report
+
+    ![](http://www.websense.com/assets/imgs/2013/whitepaper-thumb-2013-threat-report.png)
+    \
+
+    [Websense 2013\
+     Threat
+    Report](/content/websense-2013-threat-report.aspx?intcmp=mm-seclabs-en-2013ThreatReport)\
+     \
+     [**Get the report
+    \>**](/content/websense-2013-threat-report.aspx?intcmp=mm-seclabs-en-2013ThreatReport)
+
+    [Websense 2013\
+     Threat
+    Report](/content/websense-2013-threat-report.aspx?intcmp=mm-downloads-pt-2013ThreatReport)
+
+    [Reporte de\
+     amenazas de\
+     Websense
+    2013](/content/websense-2013-threat-report.aspx?intcmp=mm-downloads-es-2013ThreatReport)
+
+    [Websense 2013\
+     Threat
+    Report](/content/websense-2013-threat-report.aspx?intcmp=mm-downloads-fr-2013ThreatReport)\
+     \
+     [**Obtenir le rapport
+    \>**](/content/websense-2013-threat-report.aspx?intcmp=mm-downloads-fr-2013ThreatReport)
+
+    [Websense 2013\
+     Threat
+    Report](/content/websense-2013-threat-report.aspx?intcmp=mm-downloads-de-2013ThreatReport)
+
+    [Report sulle\
+     minacce alla\
+     sicurezza Web\
+     di
+    Websense](/content/websense-2013-threat-report.aspx?intcmp=mm-downloads-it-2013ThreatReport)
+
+    [Websense 2013\
+     Threat
+    Report](/content/websense-2013-threat-report.aspx?intcmp=mm-downloads-sch-2013ThreatReport)
+
+    [Websense 2013\
+     Threat
+    Report](/content/websense-2013-threat-report.aspx?intcmp=mm-downloads-tch-2013ThreatReport)
+
+-   [Support](/content/support.aspx)
+
+    #### Resources
+
+    -   [Support by Product](/content/SupportByProduct.aspx)
+    -   [Solution Center](/content/KnowledgeBase.aspx)
+    -   [Technical
+        Library](/content/support/library/technical-library.aspx)
+    -   [Forums](http://community.websense.com/forums/)
+    -   [Tools and Policies](/content/toolsandpolicies.aspx)
+    -   [Contact Support](/content/contactSupport.aspx)
+    -   [TRITON™ Advisory Board
+        (TAB)](/content/websense-triton-advisory-board.aspx)
+
+    -   [Suporte por
+        produto](http://www.websense.com/content/SupportByProduct.aspx)
+    -   [Centro de
+        Soluções](http://www.websense.com/content/KnowledgeBase.aspx)
+    -   [Biblioteca
+        técnica](http://www.websense.com/content/support/library/technical-library.aspx)
+    -   [Fóruns](http://community.websense.com/forums/)
+    -   [Ferramentas e
+        políticas](http://www.websense.com/content/toolsandpolicies.aspx)
+    -   [Contato com o
+        suporte](http://www.websense.com/content/contactSupport.aspx)
+    -   [TRITON™ Advisory Board
+        (TAB)](http://www.websense.com/content/websense-triton-advisory-board.aspx)
+
+    -   [Soporte por
+        producto](http://www.websense.com/content/SupportByProduct.aspx)
+    -   [Centro de
+        soluciones](http://www.websense.com/content/KnowledgeBase.aspx)
+    -   [Biblioteca
+        técnica](http://www.websense.com/content/support/library/technical-library.aspx)
+    -   [Foros](http://community.websense.com/forums/)
+    -   [Herramientas y
+        políticas](http://www.websense.com/content/toolsandpolicies.aspx)
+    -   [Contacto para
+        soporte](http://www.websense.com/content/contactSupport.aspx)
+    -   [TRITON™ Advisory Board
+        (TAB)](http://www.websense.com/content/websense-triton-advisory-board.aspx)
+
+    -   [Support technique par
+        produit](http://www.websense.com/content/SupportByProduct.aspx)
+    -   [Centre de
+        solutions](http://www.websense.com/content/KnowledgeBase.aspx)
+    -   [Bibliothèque
+        technique](http://www.websense.com/content/support/library/technical-library.aspx)
+    -   [Forums](http://community.websense.com/forums/)
+    -   [Outils et
+        politiques](http://www.websense.com/content/toolsandpolicies.aspx)
+    -   [Contacter le Support
+        technique](http://www.websense.com/content/contactSupport.aspx)
+    -   [TRITON™ Advisory Board
+        (TAB)](http://www.websense.com/content/websense-triton-advisory-board.aspx)
+
+    -   [Support nach
+        Produkten](http://www.websense.com/content/SupportByProduct.aspx)
+    -   [Hilfe
+        Zentrum](http://www.websense.com/content/KnowledgeBase.aspx)
+    -   [Technische
+        Bibliothek](http://www.websense.com/content/support/library/technical-library.aspx)
+    -   [Foren](http://community.websense.com/forums/)
+    -   [Tools &
+        Richtlinien](http://www.websense.com/content/toolsandpolicies.aspx)
+    -   [Den Support
+        kontaktieren](http://www.websense.com/content/contactSupport.aspx)
+    -   [TRITON™ Advisory Board
+        (TAB)](http://www.websense.com/content/websense-triton-advisory-board.aspx)
+
+    -   [Supporto per
+        prodotto](http://www.websense.com/content/SupportByProduct.aspx)
+    -   [Centro
+        soluzioni](http://www.websense.com/content/KnowledgeBase.aspx)
+    -   [Biblioteca
+        tecnica](http://www.websense.com/content/support/library/technical-library.aspx)
+    -   [Forum](http://community.websense.com/forums/)
+    -   [Strumenti e
+        Policy](http://www.websense.com/content/toolsandpolicies.aspx)
+    -   [Contatta il
+        supporto](http://www.websense.com/content/contactSupport.aspx)
+    -   [TRITON™ Advisory Board
+        (TAB)](http://www.websense.com/content/websense-triton-advisory-board.aspx)
+
+    -   [产品支持](http://www.websense.com/content/SupportByProduct.aspx)
+    -   [解决方案中心](http://www.websense.com/content/KnowledgeBase.aspx)
+    -   [技术文档库](http://www.websense.com/content/support/library/technical-library.aspx)
+    -   [论坛](http://community.websense.com/forums/)
+    -   [工具和政策](http://www.websense.com/content/toolsandpolicies.aspx)
+    -   [联系支持](http://www.websense.com/content/contactSupport.aspx)
+    -   [TRITON™ Advisory Board
+        (TAB)](http://www.websense.com/content/websense-triton-advisory-board.aspx)
+
+    -   [產品支援](http://www.websense.com/content/SupportByProduct.aspx)
+    -   [解決方案中心](http://www.websense.com/content/KnowledgeBase.aspx)
+    -   [技術文件庫](http://www.websense.com/content/support/library/technical-library.aspx)
+    -   [論壇](http://community.websense.com/forums/)
+    -   [工具與策略](http://www.websense.com/content/toolsandpolicies.aspx)
+    -   [連絡支援](http://www.websense.com/content/contactSupport.aspx)
+    -   [TRITON™ Advisory Board
+        (TAB)](http://www.websense.com/content/websense-triton-advisory-board.aspx)
+
+    #### Stay Informed
+
+    -   [Tech Alerts](/content/TechAlerts.aspx)
+    -   [Support Webinars](/content/SupportWebinars.aspx)
+
+    -   [Alertas
+        técnicos](http://www.websense.com/content/TechAlerts.aspx)
+    -   [Seminários Web de
+        suporte](http://www.websense.com/content/SupportWebinars.aspx)
+
+    -   [Alertas
+        técnicos](http://www.websense.com/content/TechAlerts.aspx)
+    -   [Webinars de
+        soporte](http://www.websense.com/content/SupportWebinars.aspx)
+
+    -   [Alertes
+        techniques](http://www.websense.com/content/TechAlerts.aspx)
+    -   [Webinars de support
+        technique](http://www.websense.com/content/SupportWebinars.aspx)
+
+    -   [Tech alerts](http://www.websense.com/content/TechAlerts.aspx)
+    -   [Support-Webinars](http://www.websense.com/content/SupportWebinars.aspx)
+
+    -   [Alert tecnici](http://www.websense.com/content/TechAlerts.aspx)
+    -   [Seminari interattivi di
+        supporto](http://www.websense.com/content/SupportWebinars.aspx)
+
+    -   [技术提醒](http://www.websense.com/content/TechAlerts.aspx)
+    -   [产品支持网络研讨会](http://www.websense.com/content/SupportWebinars.aspx)
+
+    -   [技術通知](http://www.websense.com/content/TechAlerts.aspx)
+    -   [支援網路研討會](http://www.websense.com/content/SupportWebinars.aspx)
+
+    #### MyWebsense
+
+    Get information on product updates, support resources and more.
+
+    -   [Log In](/content/Registration.aspx?task=signin)
+    -   [Register](/content/Registration.aspx?task=signin)
+
+    -   [Fazer
+        login](http://www.websense.com/content/Registration.aspx?task=signin)
+    -   [Inscreva-se
+        agora](http://www.websense.com/content/Registration.aspx?task=signin)
+
+    -   [Iniciar](http://www.websense.com/content/Registration.aspx?task=signin)
+    -   [Registrarse](http://www.websense.com/content/Registration.aspx?task=signin)
+
+    -   [Se
+        connecter](http://www.websense.com/content/Registration.aspx?task=signin)
+    -   [S'inscrire](http://www.websense.com/content/Registration.aspx?task=signin)
+
+    -   [Anmelden](http://www.websense.com/content/Registration.aspx?task=signin)
+    -   [Registrieren](http://www.websense.com/content/Registration.aspx?task=signin)
+
+    -   [Log-in](http://www.websense.com/content/Registration.aspx?task=signin)
+    -   [Registrazione](http://www.websense.com/content/Registration.aspx?task=signin)
+
+    -   [登录](http://www.websense.com/content/Registration.aspx?task=signin)
+    -   [注册](http://www.websense.com/content/Registration.aspx?task=signin)
+
+    -   [登入](http://www.websense.com/content/Registration.aspx?task=signin)
+    -   [註冊](http://www.websense.com/content/Registration.aspx?task=signin)
+
+    #### New Customers
+
+    Get the most out of support in five simple steps.
+
+    -   [Learn How](/content/get-the-most-out-of-support.aspx)
+
+    -   [Saiba
+        mais](http://www.websense.com/content/get-the-most-out-of-support.aspx)
+
+    -   [Conozca
+        más](http://www.websense.com/content/get-the-most-out-of-support.aspx)
+
+    -   [En savoir
+        plus](http://www.websense.com/content/get-the-most-out-of-support.aspx)
+
+    -   [Erfahren sie
+        mehr](http://www.websense.com/content/get-the-most-out-of-support.aspx)
+
+    -   [Per saperne di
+        più](http://www.websense.com/content/get-the-most-out-of-support.aspx)
+
+    -   [更多内容](http://www.websense.com/content/get-the-most-out-of-support.aspx)
+
+    -   [更多内容](http://www.websense.com/content/get-the-most-out-of-support.aspx)
+
+    #### New Zero-Day Vulnerability Threatens 37% of Enterprise Users of Microsoft Windows and Microsoft Office {style="font-size: 18px;"}
+
+    [Learn
+    more](http://community.websense.com/blogs/securitylabs/archive/2013/11/06/microsoft-office-zero-day-vulnerability-cve-2013-3906.aspx?intcmp=mm-support-en-0day)
+
+    ![](http://www.websense.com/assets/imgs/2013/ws2013-mm-support-0day.png)
+    \
+
+    [![](http://www.websense.com/assets/imgs/2013/ws2013-mm-support-seclabs-logo.png)](http://community.websense.com/blogs/securitylabs/archive/2013/11/06/microsoft-office-zero-day-vulnerability-cve-2013-3906.aspx?intcmp=mm-support-en-0day)
+
+    [Saiba
+    mais](http://www.websense.com/content/get-the-most-out-of-support.aspx?intcmp=mm-support-pt-getTheMostOutOfSupport)
+
+    [Conozca
+    más](http://www.websense.com/content/get-the-most-out-of-support.aspx?intcmp=mm-support-es-getTheMostOutOfSupport)
+
+    [En savoir
+    plus](http://www.websense.com/content/get-the-most-out-of-support.aspx?intcmp=mm-support-fr-getTheMostOutOfSupport)
+
+    [Erfahren sie
+    mehr](http://www.websense.com/content/get-the-most-out-of-support.aspx?intcmp=mm-support-de-getTheMostOutOfSupport)
+
+    [Per saperne di
+    più](http://www.websense.com/content/get-the-most-out-of-support.aspx?intcmp=mm-support-it-getTheMostOutOfSupport)
+
+    [更多内容](http://www.websense.com/content/get-the-most-out-of-support.aspx?intcmp=mm-support-sch-getTheMostOutOfSupport)
+
+    [更多内容](http://www.websense.com/content/get-the-most-out-of-support.aspx?intcmp=mm-support-tch-getTheMostOutOfSupport)
+
+-   [Partners](/content/websense-partner-programs.aspx)
+
+    #### Find
+
+    -   [Websense Partners](/content/find-a-partner.aspx)
+    -   [Websense Distributors](/content/find-a-distributor.aspx)
+
+    #### Partner With Websense
+
+    -   [Global Partner
+        Program](/content/websense-global-partner-program.aspx)
+    -   [TRITON Security Alliance
+        Program](/content/websense-triton-security-alliance.aspx)
+    -   [Vendor Alliance](/content/vendor-alliance.aspx)
+    -   [OEM Partner
+        Program](/content/websense-oem-partnership-program.aspx)
+
+    #### Global Partner Portal
+
+    Find tools and assets to help sell Websense solutions.
+
+    -   [Log In](/content/websense-global-partner-program.aspx)
+    -   [Request a Login](/content/partner-new-user.aspx)
+    -   [Forgot Login/Password?](/content/partner-forgot-password.aspx)
+
+    #### Other Resources
+
+    -   [MyWebsense](/content/mywebsense-subscriptions.aspx)
+    -   [Partner Training and Technical
+        Certification](/content/training-and-technical-certification-partners.aspx)
+    -   [Authorized Training
+        Locations](/content/training-and-technical-certification-locations.aspx)
+
+    #### To buy, renew or learn more about our products, contact one of our partners.
+
+    ![](http://www.websense.com/assets/imgs/2013/ws2013-mm-partners-promoimg.png)
+    \
+     \
+
+    [Find a
+    Partner](/content/find-a-partner.aspx?intcmp=mm-partner-en-findAPartner)
+
+    [Encontre um
+    parceiro](/content/find-a-partner.aspx?intcmp=mm-partner-pt-findAPartner)
+
+    [Encuentre un
+    socio](/content/find-a-partner.aspx?intcmp=mm-partner-es-findAPartner)
+
+    [Trouver un
+    partenaire](/content/find-a-partner.aspx?intcmp=mm-partner-fr-findAPartner)
+
+    [Partner
+    finden](/content/find-a-partner.aspx?intcmp=mm-partner-de-findAPartner)
+
+    [Cerca un
+    partner](/content/find-a-partner.aspx?intcmp=mm-partner-it-findAPartner)
+
+    [寻找合作伙伴](/content/find-a-partner.aspx?intcmp=mm-partner-sch-findAPartner)
+
+    [尋找合作夥伴](/content/find-a-partner.aspx?intcmp=mm-partner-tch-findAPartner)
+
+-   [Company](/content/company.aspx)
+
+    #### Corporate
+
+    -   [Overview](/content/company.aspx)
+    -   [History](/content/company-timeline.aspx)
+    -   [Office of the CSO](/content/websense-office-of-the-cso.aspx)
+    -   [Executive Briefing
+        Center](/content/websense-executive-briefing-center.aspx)
+    -   [Management](/content/management.aspx)
+    -   [Events](/content/events.aspx)
+    -   [Careers](/content/careers.aspx)
+    -   [Legal](/content/legal.aspx)
+    -   [Join Our Mailing List](/content/opt-in-messaging.aspx)
+
+    #### Media
+
+    -   [News and Views](/content/news-and-views.aspx)
+    -   [Blogs](http://community.websense.com/blogs/)
+    -   [Industry Analyst
+        Reports](/content/industry-analyst-reports.aspx)
+
+    -   [Notícias](/content/newsroom-pt.aspx)
+    -   [Centro de mídias sociais](http://community.websense.com/blogs/)
+    -   [Relatórios de analistas do
+        setor](http://www.websense.com/content/industry-analyst-reports.aspx)
+
+    -   [Noticias](/content/newsroom-es.aspx)
+    -   [Centro de Redes Sociales](http://community.websense.com/blogs/)
+    -   [Reportes de Analistas de la
+        Industria](http://www.websense.com/content/industry-analyst-reports.aspx)
+
+    -   [Actualités et points de vue](/content/newsroom-fr.aspx)
+    -   [Centre de réseaux
+        sociaux](http://community.websense.com/blogs/)
+    -   [Rapports des
+        analystes](http://www.websense.com/content/industry-analyst-reports.aspx)
+
+    -   [Presse](/content/newsroom-de.aspx)
+    -   [Zentrum für soziale
+        Medien](http://community.websense.com/blogs/)
+    -   [Studien von
+        Branchenanalysten](http://www.websense.com/content/industry-analyst-reports.aspx)
+
+    -   [Sala Stampa](/content/newsroom-it.aspx)
+    -   [Centro social media](http://community.websense.com/blogs/)
+    -   [Report degli analisti di
+        settore](http://www.websense.com/content/industry-analyst-reports.aspx)
+
+    -   [新闻和评论](/content/newsroom-sch.aspx)
+    -   [Social Media Center](http://community.websense.com/blogs/)
+    -   [行业分析师报告](http://www.websense.com/content/industry-analyst-reports.aspx)
+
+    -   [新聞與檢視](/content/newsroom-tch.aspx)
+    -   [Social Media Center](http://community.websense.com/blogs/)
+    -   [業界分析師報告](http://www.websense.com/content/industry-analyst-reports.aspx)
+
+    #### Learn More
+
+    -   [Blocked by Websense?](/content/blocked-by-websense.aspx)
+    -   [Terms and
+        Conditions](/content/websense-terms-and-conditions.aspx)
+    -   [Contact Us](/content/contact-us.aspx)
+
+    -   [Bloqueado pela
+        Websense?](http://www.websense.com/content/blocked-by-websense.aspx)
+    -   [Termos e
+        Condições](http://www.websense.com/content/websense-terms-and-conditions.aspx)
+    -   [Contato](/content/websense-try-buy.aspx)
+
+    -   [¿Bloqueado por Websense?](/content/blocked-by-websense.aspx)
+    -   [Términos y
+        condiciones](/content/websense-terms-and-conditions.aspx)
+    -   [Contáctenos](/content/websense-try-buy.aspx)
+
+    -   [Bloqué par Websense
+        ?](http://www.websense.com/content/blocked-by-websense.aspx)
+    -   [Conditions
+        générales](http://www.websense.com/content/websense-terms-and-conditions.aspx)
+    -   [Nous contacter](/content/websense-try-buy.aspx)
+
+    -   [Durch Websense
+        blockiert?](http://www.websense.com/content/blocked-by-websense.aspx)
+    -   [Geschäftsbedingungen](http://www.websense.com/content/websense-terms-and-conditions.aspx)
+    -   [Kontakt](/content/websense-try-buy.aspx)
+
+    -   [Bloccati da
+        Websense?](http://www.websense.com/content/blocked-by-websense.aspx)
+    -   [Termini e
+        condizioni](http://www.websense.com/content/websense-terms-and-conditions.aspx)
+    -   [Contattaci](/content/websense-try-buy.aspx)
+
+    -   [被 Websense
+        阻止？](http://www.websense.com/content/blocked-by-websense.aspx)
+    -   [条款及条件](http://www.websense.com/content/websense-terms-and-conditions.aspx)
+    -   [联系我们](/content/websense-try-buy.aspx)
+
+    -   [受到 Websense 封鎖嗎？](/content/blocked-by-websense.aspx)
+    -   [條款和條件](/content/websense-terms-and-conditions.aspx)
+    -   [與我們聯絡](/content/websense-try-buy.aspx)
+
+    ![](http://www.websense.com/assets/imgs/2013/ws2013-mailing-list-icon.png)
+
+    #### [Join our mailing list.](/content/opt-in-messaging.aspx?intcmp=mm-company-en-mailing-list) {style="text-transform: uppercase; font-weight: bold; margin-bottom: 10px;"}
+
+    Be notified of Websense news, product information, industry events
+    and more. \
+     \
+
+    [Sign Up
+    \>](/content/opt-in-messaging.aspx?intcmp=mm-company-en-mailing-list)
+
+    [Ir](/content/careers.aspx?intcmp=mm-careers-pt-hiring)
+
+    [Ir](/content/careers.aspx?intcmp=mm-careers-es-hiring)
+
+    [Allez](/content/careers.aspx?intcmp=mm-careers-fr-hiring)
+
+    [Los](/content/careers.aspx?intcmp=mm-careers-de-hiring)
+
+    [Vai](/content/careers.aspx?intcmp=mm-careers-it-hiring)
+
+    [进入](/content/careers.aspx?intcmp=mm-careers-sch-hiring)
+
+    [執行](/content/careers.aspx?intcmp=mm-careers-tch-hiring)
+
+wsRoot
+
+-   ### In Cybersecurity, New Year's Resolutions Can't Wait for Jan. 1 {style="font-size: 34px;"}
+
+    Show cybercriminals your resolve.\
+     Plan your defenses with insights from the\
+     Websense® 2014 Security Predictions report.
+
+    [Get The
+    Report](/content/websense-2014-security-predictions-report.aspx?intcmp=hp-banner-en-2014-security-predictions-report)
+
+    ### Aqui está a prova: O TRITON® detém mais ameaças. {style="text-transform: none; font-size: 34px;"}
+
+    Resultados de laboratórios independentes confirmam que, em ambientes
+    de rede no mundo real, o TRITON detém mais ameaças do que as
+    soluções de segurança dos concorrentes. Faça o download da sua cópia
+    do relatório e descubra por que as defesas convencionais não se
+    comparam.
+
+    [Acessar o
+    relatório](/content/miercom-report-2013.aspx?intcmp=hp-banner-pt-miercom-report-2013)
+
+    ![2013 Miercom
+    Report](http://ssdreddot3/assets/imgs/2013/ws2013-homepage-marquee-miercom-logo.png)
+
+    ### Esta es la prueba: Triton® detiene más amenazas. {style="text-transform: none; font-size: 34px;"}
+
+    Los resultados de laboratorios independientes confirman que en
+    entornos de red del mundo real, TRITON detiene más amenazas que las
+    soluciones de seguridad de la competencia. Descargue su copia del
+    informe y descubra por qué las defensas convencionales no están a la
+    altura de nuestra solución.
+
+    [Obtenga el
+    informe](/content/miercom-report-2013.aspx?intcmp=hp-banner-es-miercom-report-2013)
+
+    ![2013 Miercom
+    Report](http://ssdreddot3/assets/imgs/2013/ws2013-homepage-marquee-miercom-logo.png)
+
+    ### Voici la preuve : TRITON™ neutralise davantage de menaces. {style="text-transform: none; font-size: 34px;"}
+
+    Des résultats obtenus par des laboratoires indépendants confirment
+    que, dans des environnements de réseau réels, TRITON neutralise
+    davantage de menaces que les solutions de sécurité concurrentes.
+    Téléchargez votre exemplaire du rapport, et découvrez pourquoi les
+    moyens de défense conventionnels ne font tout simplement pas le
+    poids.
+
+    [Obtenir le
+    rapport](/content/miercom-report-2013.aspx?intcmp=hp-banner-fr-miercom-report-2013)
+
+    ![2013 Miercom
+    Report](http://ssdreddot3/assets/imgs/2013/ws2013-homepage-marquee-miercom-logo.png)
+
+    ### Hier der Beweis: TRITON™ stoppt mehr Bedrohungen. {style="text-transform: none; font-size: 34px;"}
+
+    Unabhängige Testergebnisse zeigen, dass TRITON in einer realen
+    Netzwerkumgebung mehr Bedrohungen stoppt, als andere
+    Sicherheitslösungen von Mitbewerbern. Laden Sie sich eine Kopie des
+    Berichts herunter und erfahren Sie, warum konventionelle
+    Sicherheitslösungen mit Websense nicht mithalten können.
+
+    [Bericht
+    abrufen](/content/miercom-report-2013.aspx?intcmp=hp-banner-de-miercom-report-2013)
+
+    ![2013 Miercom
+    Report](http://ssdreddot3/assets/imgs/2013/ws2013-homepage-marquee-miercom-logo.png)
+
+    ### Ecco la prova: TRITON™ arresta più minacce. {style="text-transform: none; font-size: 34px;"}
+
+    I risultati di un laboratorio indipendente confermano che negli
+    ambienti di rete reali, TRITON arresta più minacce rispetto alle
+    soluzioni per la sicurezza di altri produttori. Scarica la tua copia
+    del report e scopri perché le difese convenzionali non sono
+    all'altezza.
+
+    [Scarica il
+    report](/content/miercom-report-2013.aspx?intcmp=hp-banner-it-miercom-report-2013)
+
+    ![2013 Miercom
+    Report](http://ssdreddot3/assets/imgs/2013/ws2013-homepage-marquee-miercom-logo.png)
+
+    ### 证据在此：TRITON® 阻止更多威胁。 {style="text-transform: none; font-size: 34px;"}
+
+    独立的实验室结果确认在现实世界的网络环境中，TRITON
+    可以比竞争对手的安全解决方案阻止更多的威胁。下载您报告的副本，了解为何传统防御已经落伍。
+
+    [获取报告](http://www.websense.com/content/miercom-report-2013.aspx?intcmp=hp-banner-sch-miercom-report-2013)
+
+    ![2013 Miercom
+    Report](http://ssdreddot3/assets/imgs/2013/ws2013-homepage-marquee-miercom-logo.png)
+
+    ### 這就是證明：沒有人能比 TRITON® 阻止更多威脅。 {style="text-transform: none; font-size: 34px;"}
+
+    獨立的實驗室測試結果證實，在現實世界的網路環境中，TRITON
+    能比競爭的安全性解決方案阻止更多威脅。下載您的報告副本，並找出為什麼傳統的防禦技術達不到期望。
+
+    [取得報告](http://www.websense.com/content/miercom-report-2013.aspx?intcmp=hp-banner-tch-miercom-report-2013)
+
+    ![2013 Miercom
+    Report](http://ssdreddot3/assets/imgs/2013/ws2013-homepage-marquee-miercom-logo.png)
+
+-   ### Enhanced security for targeted, zero-day and advanced persistent threats. {style="font-size: 34px;"}
+
+    Stay ahead of even the most sophisticated threats with new\
+     Websense® TRITON® sandboxing, threat monitoring,\
+     virtual appliances and more.
+
+    [learn
+    more](/content/newtritondefenses.aspx?intcmp=hp-banner-en-newtritondefenses)
+
+    ### O caminho mais curto para a prevenção. {style="font-size: 34px;"}
+
+    Implementar controles contra a perda de dados e prevenção contra
+    roubo pode ser mais simples do que você imagina. Websense pode
+    comprovar como proteger sua propriedade intelectual em apenas seis
+    passos.
+
+    [Saiba
+    mais](/content/dlp-shortest-path-to-prevention-bundle-2013.aspx?intcmp=hp-banner-pt-dlp-bundle)
+
+    ### El camino más corto para la prevención. {style="font-size: 34px;"}
+
+    Implementar controles contra la pérdida de datos y para la
+    prevención contra el robo de datos puede ser más simple de lo que
+    cree. Websense puede mostrarle cómo proteger su propiedad
+    intelectual en sólo seis pasos.
+
+    [APRENDA
+    MÁS](/content/dlp-shortest-path-to-prevention-bundle-2013.aspx?intcmp=hp-banner-es-dlp-bundle)
+
+    ### Le chemin le plus rapide de la prévention. {style="font-size: 34px;"}
+
+    Déployer des contrôles de prévention de perte et vols de données
+    peut être plus simple que ce que vous pensez. Websense peut vous
+    montrer comment protéger votre propriété intellectuelle en 6 étapes
+    seulement.
+
+    [En savoir
+    plus](/content/dlp-shortest-path-to-prevention-bundle-2013.aspx?intcmp=hp-banner-fr-dlp-bundle)
+
+    ### Der kürzeste Weg zu Prävention und Risikominderung {style="font-size: 34px;"}
+
+    Die Prävention und Kontrolle gegen Datenverlust und Datendiebstahl
+    kann einfacher sein, als Sie vielleicht denken. Websense zeigt
+    Ihnen, wie Sie Ihr geistiges Eigentum in nur sechs Schritten
+    schützen.
+
+    [ERFAHREN SIE
+    MEHR](/content/dlp-shortest-path-to-prevention-bundle-2013.aspx?intcmp=hp-banner-de-dlp-bundle)
+
+    ### La via più breve verso la prevenzione. {style="font-size: 34px;"}
+
+    Implementare controlli in grado di prevenire la perdita e il furto
+    dei dati può essere molto più semplice di quanto credi. Websense ti
+    mostra come proteggere la proprietà intellettuale della tua azienda,
+    in soli sei passi.
+
+    [PER SAPERNE DI
+    PIÙ](/content/dlp-shortest-path-to-prevention-bundle-2013.aspx?intcmp=hp-banner-it-dlp-bundle)
+
+    ### 安全防护之最有效的途径 {style="font-size: 34px;"}
+
+    部署有效的安全控制比您想象的更简单。只需遵循六个步骤，您的企业就可以防止知识产权
+    (IP) 和其他敏感数据遭到泄露或窃取。
+
+    [更多内容](/content/dlp-shortest-path-to-prevention-bundle-2013.aspx?intcmp=hp-banner-sch-dlp-bundle)
+
+    ### 採取防禦的最短途徑 {style="font-size: 34px;"}
+
+    部署資料外洩和資料竊取防護比您想像的還容易。Websense 將示範如何用 6
+    個步驟就保護好您的智慧資產。
+
+    [更多詳細資訊](http://www.websense.com/content/dlp-shortest-path-to-prevention-bundle-2013.aspx?intcmp=hp-banner-tch-dlp-bundle)
+
+-   ### Is your organization ready to fight advanced persistent threats (APTs)? {style="font-size: 34px;"}
+
+    A new report from Gartner Inc. can help you assess your
+    organization's APT defenses and establish best practices.
+
+    [learn
+    more](/content/gartner-best-practices-for-mitigating-apts.aspx?intcmp=hp-banner-en-gartner-apts)
+
+    ![2013 Threat
+    Report](http://ssdreddot3/assets/imgs/2013/ws2013-homepage-marquee-2013-threat-report.png)
+
+    Foi um ano de banners para os hackers que conseguiram entrar em
+    muitos dos sites e defesas cibernéticas mais confiáveis do mundo.
+    Celulares, redes sociais, a Web, e-mails — tudo está sob ameaça.
+    Descubra por que seus sites, redes sociais e até provedores de
+    segurança preferidos estão passando por uma crise de confiança.
+
+    [Acessar o
+    relatório](/content/websense-2013-threat-report.aspx?intcmp=hp-banner-pt-2013ThreatReport)
+
+    ![2013 Threat
+    Report](http://ssdreddot3/assets/imgs/2013/ws2013-homepage-marquee-2013-threat-report.png)
+
+    Ha sido un año emblemático para los hackers, quienes intentaron
+    infringir muchas de las defensas cibernéticas y de sitios web más
+    confiables del mundo. Dispositivos móviles, redes sociales,
+    Internet, correo electrónico: todos son atacados. Descubra por qué
+    los sitios que visita, sus redes sociales e incluso sus proveedores
+    de seguridad experimentan una crisis de confianza.
+
+    [Obtenga el
+    informe](/content/websense-2013-threat-report.aspx?intcmp=hp-banner-es-2013ThreatReport)
+
+    ![2013 Threat
+    Report](http://ssdreddot3/assets/imgs/2013/ws2013-homepage-marquee-2013-threat-report.png)
+
+    Pour les pirates, cette année aura été un grand cru : ils sont
+    parvenus à déjouer les sites Web et cyberdéfenses les plus réputés
+    au monde. Les téléphones mobiles, les réseaux sociaux, le Web, les
+    messageries : rien n'est épargné. Découvrez pourquoi vos sites Web
+    favoris, les réseaux sociaux et même les fournisseurs de solutions
+    de sécurité, traversent une crise de confiance.
+
+    [Obtenir le
+    rapport](/content/websense-2013-threat-report.aspx?intcmp=hp-banner-fr-2013ThreatReport)
+
+    ![2013 Threat
+    Report](http://ssdreddot3/assets/imgs/2013/ws2013-homepage-marquee-2013-threat-report.png)
+
+    Hacker blicken auf ein überaus erfolgreiches Jahr zurück, in dem sie
+    eine Vielzahl der weltweit vertrauenswürdigsten Webseiten und
+    Cyber-Schutzmaßnahmen knacken konnten. Mobiltelefone, soziale
+    Netzwerke, das Internet, E-Mails – nichts ist mehr sicher. Erfahren
+    Sie, weshalb Ihre Lieblingsseiten, soziale Netzwerke und selbst
+    Sicherheitsanbieter vor einer großen Vertrauenskrise stehen.
+
+    [Bericht
+    abrufen](/content/websense-2013-threat-report.aspx?intcmp=hp-banner-de-2013ThreatReport)
+
+    ![2013 Threat
+    Report](http://ssdreddot3/assets/imgs/2013/ws2013-homepage-marquee-2013-threat-report.png)
+
+    Per gli hacker è stato un anno eccellente: sono riusciti a violare
+    molte delle difese cibernetiche e dei siti web più fidati al mondo.
+    Dispositivi mobili, reti sociali, il web, la posta elettronica –
+    sono tutti assediati. Scopri perché i siti che frequenti spesso, le
+    reti sociali e anche i provider per la sicurezza stanno
+    attraversando una crisi di fiducia.
+
+    [Scarica il
+    report](/content/websense-2013-threat-report.aspx?intcmp=hp-banner-it-2013ThreatReport)
+
+    ![2013 Threat
+    Report](http://ssdreddot3/assets/imgs/2013/ws2013-homepage-marquee-2013-threat-report.png)
+
+    这是黑客们志得意满的一年，他们在这一年中成功攻陷了许多世界上最受信任的网站和网络防御。移动、社交、Web、电子邮件
+    —
+    没人能够幸免。了解为何您喜爱的站点、社交网络甚至是安全提供商都正在经历一场信任危机。
+
+    [获取报告](http://www.websense.com/content/websense-2013-threat-report.aspx?intcmp=hp-banner-sch-2013ThreatReport)
+
+    ![2013 Threat
+    Report](http://ssdreddot3/assets/imgs/2013/ws2013-homepage-marquee-2013-threat-report.png)
+
+    這對駭客來說是光榮的一年，因為他們設法成功地突破了世界上許多最值得信賴的網站和位空間安全性防禦。行動裝置、社交網站、網路、電子郵件
+    —
+    全都陷入重圍，無一倖免。瞭解為什麼您常去的網站、社交網路甚至是安全防護提供商本身都飽受可信度危機之苦。
+
+    [取得報告](http://www.websense.com/content/websense-2013-threat-report.aspx?intcmp=hp-banner-tch-2013ThreatReport)
+
+-   Download our "Prove It Pack" and use our FREE online forensic
+    analysis tool to see for yourself how no one stops more threats.
+
+    [Learn
+    More](/content/proveit.aspx?intcmp=hp-banner-en-proveit-triton-message)
+
+    Faça o download do pacote "Prove agora" e tenha acesso gratuito à
+    nossa ferramenta online forense, comprove que ninguém detém mais
+    ameaças.
+
+    [Saiba
+    mais](/content/proveit.aspx?intcmp=hp-banner-pt-proveit-triton-message)
+
+    Descargue nuestro "Kit de demostración" y utilice nuestra
+    herramienta de análisis forense en línea GRATIS para ver por sí
+    mismo cómo nadie detiene más amenazas.
+
+    [Aprenda
+    más](/content/proveit.aspx?intcmp=hp-banner-es-proveit-triton-message)
+
+    Téléchargez notre « Pack Prouvez-le ! » et utilisez GRATUITEMENT
+    notre outil d'analyse des preuves de fuite/vol d'information
+    (Forensic) en ligne pour vérifier par vous-même que rien d'autre
+    n'arrête plus de menaces.
+
+    [EN APPRENDRE
+    PLUS](/content/proveit.aspx?intcmp=hp-banner-fr-proveit-triton-message)
+
+    Laden Sie unser "Prove It Pack" herunter und nutzen Sie unser
+    kostenfreies forensisches Analyse Tool und sehen Sie selbst, dass
+    Niemand mehr Bedrohungen stoppen kann.
+
+    [Erfahren Sie
+    mehr](/content/proveit.aspx?intcmp=hp-banner-de-proveit-triton-message)
+
+    Scarica il nostro "Prove It Pack" e usa il nostro tool online
+    GRATUITO per l'analisi forense per scoprire come nessun altro fermi
+    più minacce.
+
+    [PER SAPERNE DI
+    PIU](/content/proveit.aspx?intcmp=hp-banner-it-proveit-triton-message)
+
+    下载"Prove IT
+    工具包"并使用我们免费的在线诊断工具，了解我们如何阻挡更多威胁。
+
+    [了解更多信息](/content/proveit.aspx?intcmp=hp-banner-sch-proveit-triton-message)
+
+    下載「Prove It
+    Pack」工具包並使用我們的免費線上鑑識分析工具，親身體驗我們阻擋威脅的能力。
+
+    [了解更多](/content/proveit.aspx?intcmp=hp-banner-tch-proveit-triton-message)
+
+-   ### Gartner Named Websense a leader for four years running. {style="font-size: 34px;"}
+
+    Websense is a leader in the Gartner Magic Quadrant for Secure Web
+    Gateways for the 4th consecutive year.
+
+    [learn
+    more](/content/gartner-magic-quadrant-secure-web-gateways-2013.aspx?intcmp=hp-banner-en-gartner-swg)
+
+    ### Gartner elege Websense Líder pelo quarto ano consecutivo. {style="font-size: 34px;"}
+
+    Pelo quarto ano consecutivo a Websense é Líder no Quadrante Mágico
+    do Gartner em Gateways para Segurança Web.
+
+    [SAIBA
+    MAIS](/content/gartner-magic-quadrant-secure-web-gateways-2013.aspx?intcmp=hp-banner-pt-gartner-swg)
+
+    ### Gartner Nombra Websense Líder por cuarto año consecutivo. {style="font-size: 34px;"}
+
+    Websense es líder en el Cuadrante Mágico de Gartner para Secure Web
+    Gateway por cuarto año consecutivo.
+
+    [PARA MÁS
+    INFORMACIÓN](/content/gartner-magic-quadrant-secure-web-gateways-2013.aspx?intcmp=hp-banner-es-gartner-swg)
+
+    ### DEPUIS QUATRE ANS, GARTNER POSITIONNE WEBSENSE COMME LEADER. {style="font-size: 34px;"}
+
+    Websense est un leader dans le Magic Quadrant de Gartner pour les
+    passerelles Web sécurisées, pour la 4ieme année consécutive.
+
+    [Pour en savoir
+    plus](/content/gartner-magic-quadrant-secure-web-gateways-2013.aspx?intcmp=hp-banner-fr-gartner-swg)
+
+    ### Der Marktforscher Gartner stuft Websense im vierten Jahr in Folge als "Leader" ein. {style="font-size: 34px;"}
+
+    Websense steht wieder auf der führenden Seite des Gartner Magic
+    Quadrant für Secure Web Gateways.
+
+    [ERFAHREN SIE
+    MEHR](/content/gartner-magic-quadrant-secure-web-gateways-2013.aspx?intcmp=hp-banner-de-gartner-swg)
+
+    ### Gartner ha nominato Websense leader per quattro anni di seguito. {style="font-size: 34px;"}
+
+    Websense e' leader nel Magic Quadrant per Secure Web Gateway per il
+    quarto anno consecutivo.
+
+    [PER SAPERNE DI
+    PIÙ](/content/gartner-magic-quadrant-secure-web-gateways-2013.aspx?intcmp=hp-banner-it-gartner-swg)
+
+    ### Gartner连续4年认定Websense领导者地位 {style="font-size: 34px;"}
+
+    Websense四度蝉联Gartner 安全Web网关魔力象限领导者称号
+
+    [了解详情](/content/gartner-magic-quadrant-secure-web-gateways-2013.aspx?intcmp=hp-banner-sch-gartner-swg)
+
+    ### Gartner 連續4年認定Websense 領導者地位 {style="font-size: 34px;"}
+
+    Websense四度蟬聯Gartner 安全Web網関魔力象限領導者稱號
+
+    [了解詳情](/content/gartner-magic-quadrant-secure-web-gateways-2013.aspx?intcmp=hp-banner-tch-gartner-swg)
+
+[TRITON Stops More Threats. We can prove it.
+\>](/proveit?intcmp=hp-en-triton-message)
+
+[](#)
+
+-   ![Homepage carousel learn
+    icon](http://ssdreddot3/assets/imgs/2013/ws2013-carousel-learn-icon.png)
+    ![Homepage carousel learn icon
+    hover](http://ssdreddot3/assets/imgs/2013/ws2013-carousel-learn-icon-hover.png)
+
+    #### Learn
+
+    Learn about the vision, technologies and products that make Websense
+    unique in the information security industry.
+
+    The following links help tell our story:
+
+    -   [About Us](company.aspx?intcmp=hp-persona-en-learn)
+    -   [Websense ACE (Advanced\
+         Classification
+        Engine)](websense-advanced-classification-engine.aspx?intcmp=hp-persona-en-learn)
+    -   [Websense ThreatSeeker® Intelligence
+        Cloud](websense-threatseeker-network.aspx?intcmp=hp-persona-en-learn)
+    -   [Websense TRITON®
+        Security](websense-triton-security-products.aspx?intcmp=hp-persona-en-learn)
+    -   [Product Comparison
+        Chart](product-comparison-chart.aspx?intcmp=hp-persona-en-learn)
+
+-   ![Homepage carousel buy
+    icon](http://ssdreddot3/assets/imgs/2013/ws2013-carousel-buy-icon.png)
+    ![Homepage carousel buy icon
+    hover](http://ssdreddot3/assets/imgs/2013/ws2013-carousel-buy-icon-hover.png)
+
+    #### Buy
+
+    Ready to purchase a Websense information security product? Find a
+    reseller near you.
+
+    [](websense-try-buy.aspx?intcmp=hp-persona-en-buy)
+
+-   ![Homepage carousel manage
+    icon](http://ssdreddot3/assets/imgs/2013/ws2013-carousel-manage-icon.png)
+    ![Homepage carousel manage icon
+    hover](http://ssdreddot3/assets/imgs/2013/ws2013-carousel-manage-hover.png)
+
+    #### Manage
+
+    Find support, updates and other information about your Websense
+    information security deployment.
+
+    [](support.aspx?intcmp=hp-persona-en-manage)
+
+-   ![Homepage carousel social
+    icon](http://ssdreddot3/assets/imgs/2013/ws2013-homepage-carousel-social-icon.png)
+    ![Homepage carousel social icon
+    hover](http://ssdreddot3/assets/imgs/2013/ws2013-homepage-carousel-social-icon-hover.png)
+
+    #### Social
+
+    Visit the Websense Social Media Center to connect with us, see what
+    we’re up to and more.
+
+    [](http://community.websense.com/blogs/?intcmp=hp-persona-en-social)
+
+-   ![Homepage carousel research
+    icon](http://ssdreddot3/assets/imgs/2013/ws2013-homepage-carousel-research-icon.png)
+    ![Homepage carousel research icon
+    hover](http://ssdreddot3/assets/imgs/2013/ws2013-homepage-carousel-research-icon-hover.png)
+
+    #### Research
+
+    See what Websense Security Labs™ researchers are working on from
+    locations around the globe.
+
+    [](http://securitylabs.websense.com/?intcmp=hp-persona-en-research)
+
+-   ![Homepage carousel careers
+    icon](http://ssdreddot3/assets/imgs/2013/ws2013-homepage-carousel-careers-icon.png)
+    ![Homepage carousel careers icon
+    hover](http://ssdreddot3/assets/imgs/2013/ws2013-homepage-carousel-careers-icon-hover.png)
+
+    #### Careers
+
+    Come work for us. We offer competitive compensation and benefits to
+    provide peace of mind and job satisfaction.
+
+    [](careers.aspx?intcmp=hp-persona-en-careers)
+
+[](#)
+
+#### [Jump-start your 2014 security planning.](websense-2014-security-predictions-report.aspx?intcmp=hp-promo-pod-en-2014-security-predictions-report)
+
+Start now with the Websense® 2014 Security Predictions report.
+
+[Get the report
+\>](websense-2014-security-predictions-report.aspx?intcmp=hp-promo-pod-en-2014-security-predictions-report)
+
+[![](http://reddot.websense.com/assets/imgs/2013/ws2013-hp-promo-2014-security-predictions-thumb.png)](websense-2014-security-predictions-report.aspx?intcmp=hp-promo-pod-en-2014-security-predictions-report)
+
+#### [Zero in on zero-day threats and APTs](websense-threatscope.aspx?intcmp=hp-promo-pod-en-triton-threatscope)
+
+Get expanded sandbox defenses, forensic reporting and more with
+Websense® ThreatScope™
+
+[Learn more
+\>](websense-threatscope.aspx?intcmp=hp-promo-pod-en-triton-threatscope)
+
+[![](http://ssdreddot3/assets/imgs/2013/ws2013-hp-promo-threatscope-thumb.png)](websense-threatscope.aspx?intcmp=hp-promo-pod-en-triton-threatscope)
+
+#### [What's hiding in your network?](websense-triton-riskvision-bundle.aspx?intcmp=hp-promo-pod-en-riskvision-bundle)
+
+Expose cybercriminal activity with Websense® TRITON® RiskVision™.
+
+[Learn more
+\>](websense-triton-riskvision-bundle.aspx?intcmp=hp-promo-pod-en-riskvision-bundle)
+
+[![](http://ssdreddot3/assets/imgs/2013/ws2013-hp-promo-triton-riskvision-thumb.png)](websense-triton-riskvision-bundle.aspx?intcmp=hp-promo-pod-en-riskvision-bundle)
+
+#### [TRITON: Unified, Intelligent and\
+ Real-Time Security](websense-triton-security-products.aspx?intcmp=hp-promos-en-triton)
+
+Websense TRITON architecture is the foundation of our web, email, mobile
+and data security solutions. It helps us provide comprehensive, easily
+managed security at the lowest TCO.
+
+[Learn more
+\>](websense-triton-security-products.aspx?intcmp=hp-promos-en-triton)
+
+#### [Our Difference: Websense ACE\
+ (Advanced Classification Engine)](websense-advanced-classification-engine.aspx?intcmp=hp-promos-en-ace)
+
+Websense ACE is the power behind all our web, email, data and mobile
+security products.
+
+[Learn more
+\>](websense-advanced-classification-engine.aspx?intcmp=hp-promos-en-ace)
+
+[![](http://reddot.websense.com/assets/imgs/2013/ws2013-mailing-list-icon.png)](/content/opt-in-messaging.aspx?intcmp=hp-promos-en-mailing-list)
+
+#### [Join our mailing list.](/content/opt-in-messaging.aspx?intcmp=hp-promos-en-mailing-list)
+
+Be notified of Websense news, product information, industry events and
+more.
+
+[Sign Up
+\>](/content/opt-in-messaging.aspx?intcmp=hp-promos-en-mailing-list)
+
+#### [Websense® 2013\
+ Threat Report](websense-2013-threat-report.aspx?intcmp=hp-promo-pod-pt-2013-threat-report)
+
+Descubra por que sua confiança em medidas de segurança tradicionais pode
+estar limitada ao passado
+
+[Acessar o relatório
+\>](websense-2013-threat-report.aspx?intcmp=hp-promo-pod-pt-2013-threat-report)
+
+[![](http://ssdreddot3/assets/imgs/2013/ws2013-hp-promo-2013-threat-report-thumb.png)](websense-2013-threat-report.aspx?intcmp=hp-promo-pod-pt-2013-threat-report)
+
+#### [A Websense ganhou\
+ dois prêmios da *SC Magazine*](https://community.websense.com/blogs/websense-accolades/archive/2013/02/27/websense-takes-home-best-web-content-management-and-best-regulatory-compliance-at-the-2013-sc-magazine-awards-us.aspx?intcmp=hp-promo-pod-pt-SC-Awards-2013)
+
+Vencemos nas categorias "Melhor produto de gerenciamento de conteúdo da
+Web" e "Melhor solução de conformidade regulatória".
+
+[Para saber mais
+\>](https://community.websense.com/blogs/websense-accolades/archive/2013/02/27/websense-takes-home-best-web-content-management-and-best-regulatory-compliance-at-the-2013-sc-magazine-awards-us.aspx?intcmp=hp-promo-pod-pt-SC-Awards-2013)
+
+[![](http://ssdreddot3/assets/imgs/2013/ws2013-hp-promo-cs-2013-award.png)](https://community.websense.com/blogs/websense-accolades/archive/2013/02/27/websense-takes-home-best-web-content-management-and-best-regulatory-compliance-at-the-2013-sc-magazine-awards-us.aspx?intcmp=hp-promo-pod-pt-SC-Awards-2013)
+
+#### [Avaliação: O TRITON detém mais ameaças](/content/miercom-report-2013.aspx?intcmp=hp-promo-pod-pt-miercom-report-2013)
+
+O nosso documento técnico de avaliação "Reality Check" acrescenta
+contexto crucial aos resultados do teste do relatório Miercom.
+
+[Ler o documento técnico
+\>](/content/miercom-report-2013.aspx?intcmp=hp-promo-pod-pt-miercom-report-2013)
+
+[![](http://ssdreddot3/assets/imgs/2013/ws2013-hp-promo-miercom-report.png)](/content/miercom-report-2013.aspx?intcmp=hp-promo-pod-pt-miercom-report-2013)
+
+#### [TRITON: Segurança unificada,\
+ inteligente e em tempo real](websense-triton-security-products.aspx?intcmp=hp-promos-pt-triton)
+
+A arquitetura Websense TRITON é a base de nossas soluções de segurança
+de dados, Web, e-mail e celular. Ela nos ajuda a fornecer segurança
+abrangente e de fácil gerenciamento com o menor custo total de
+propriedade.
+
+[Para saber mais
+\>](websense-triton-security-products.aspx?intcmp=hp-promos-pt-triton)
+
+#### [TRITON Solution Suites:\
+ total segurança da informação](websense-triton-security-products.aspx?intcmp=hp-promos-pt-tritonSolutions)
+
+Obtenha segurança na Web, segurança de e-mail e recursos DLP com três
+opções de soluções.
+
+[Para saber mais
+\>](websense-triton-security-products.aspx?intcmp=hp-promos-pt-tritonSolutions)
+
+#### [Nossa diferença: Websense ACE\
+ (Advanced Classification Engine)](websense-advanced-classification-engine.aspx?intcmp=hp-promos-pt-ace)
+
+Websense ACE é a força por trás de todos os nossos produtos de segurança
+na Web, segurança de e-mail, segurança de dados e segurança para
+computação móvel.
+
+[Para saber mais
+\>](websense-advanced-classification-engine.aspx?intcmp=hp-promos-pt-ace)
+
+#### [Websense® 2013\
+ Informe de Amenazas](websense-2013-threat-report.aspx?intcmp=hp-promo-pod-es-2013-threat-report)
+
+Averigüe por qué su confianza en las medidas de seguridad tradicional
+podría ser inapropiada.
+
+[Obtenga el Informe
+\>](websense-2013-threat-report.aspx?intcmp=hp-promo-pod-es-2013-threat-report)
+
+[![](http://ssdreddot3/assets/imgs/2013/ws2013-hp-promo-2013-threat-report-thumb.png)](websense-2013-threat-report.aspx?intcmp=hp-promo-pod-es-2013-threat-report)
+
+#### [Revise nuestro Websense Blogs](https://community.websense.com/blogs/websense-accolades/archive/2013/02/27/websense-takes-home-best-web-content-management-and-best-regulatory-compliance-at-the-2013-sc-magazine-awards-us.aspx?intcmp=hp-promo-pod-es-SC-Awards-2013)
+
+Manténgase informado sobre las últimas hazañas de seguridad, noticias de
+la industria, investigación, soluciones y más.
+
+[Averigüe más
+\>](https://community.websense.com/blogs/websense-accolades/archive/2013/02/27/websense-takes-home-best-web-content-management-and-best-regulatory-compliance-at-the-2013-sc-magazine-awards-us.aspx?intcmp=hp-promo-pod-es-SC-Awards-2013)
+
+[![](http://ssdreddot3/assets/imgs/2013/ws2013-hp-promo-blog-thumb.png)](https://community.websense.com/blogs/websense-accolades/archive/2013/02/27/websense-takes-home-best-web-content-management-and-best-regulatory-compliance-at-the-2013-sc-magazine-awards-us.aspx?intcmp=hp-promo-pod-es-SC-Awards-2013)
+
+#### [TRITON detiene más amenazas.](miercom-report-2013.aspx?intcmp=hp-promo-pod-es-miercom-report-2013)
+
+Nuestro libro blanco "Contraste con la realidad" agrega un contexto
+crucial a los resultados del análisis del informe de Miercom.
+
+[Obtenga el libro blanco
+\>](miercom-report-2013.aspx?intcmp=hp-promo-pod-es-miercom-report-2013)
+
+[![](http://ssdreddot3/assets/imgs/2013/ws2013-hp-promo-miercom-report.png)](miercom-report-2013.aspx?intcmp=hp-promo-pod-es-miercom-report-2013)
+
+#### [TRITON: Seguridad unificada, inteligente y en tiempo real](websense-triton-security-products.aspx?intcmp=hp-promos-es-triton)
+
+La arquitectura Websense TRITON es la base de nuestras soluciones de
+seguridad web, de correo electrónico, móvil y de datos.
+
+[Conozca más
+\>](websense-triton-security-products.aspx?intcmp=hp-promos-es-triton)
+
+#### [Paquete de soluciones TRITON:\
+ Seguridad de la información completa](websense-triton-security-products.aspx?intcmp=hp-promos-es-tritonSolutions)
+
+Obtenga funciones de seguridad web, de seguridad de correo electrónico y
+de prevención de pérdida de datos (DLP) en tres soluciones a elección.
+
+[Conozca más
+\>](websense-triton-security-products.aspx?intcmp=hp-promos-es-tritonSolutions)
+
+#### [Nuestra diferencia: Websense ACE\
+ (Advanced Classification Engine)](websense-advanced-classification-engine.aspx?intcmp=hp-promos-en-ace)
+
+Websense ACE es la potencia detrás de todos nuestros productos de
+seguridad móvil, web, de correo electrónico y de datos.
+
+[Conozca más
+\>](websense-advanced-classification-engine.aspx?intcmp=hp-promos-es-ace)
+
+#### [Rapport Websense® 2013 sur les menaces](/content/websense-2013-threat-report.aspx?intcmp=hp-promo-pod-fr-2013-threat-report)
+
+Découvrez pourquoi la confiance que vous accordez aux mesures de
+sécurité traditionnelles pourrait bien s'avérer infondée.
+
+[Obtenir le rapport
+\>](/content/websense-2013-threat-report.aspx?intcmp=hp-promo-pod-fr-2013-threat-report)
+
+[![](http://ssdreddot3/assets/imgs/2013/ws2013-hp-promo-2013-threat-report-thumb.png)](/content/websense-2013-threat-report.aspx?intcmp=hp-promo-pod-fr-2013-threat-report)
+
+#### [Websense décroche deux des prix décernés par SC Magazine](https://community.websense.com/blogs/websense-accolades/archive/2013/02/27/websense-takes-home-best-web-content-management-and-best-regulatory-compliance-at-the-2013-sc-magazine-awards-us.aspx?intcmp=hp-promo-pod-fr-SC-Awards-2013)
+
+Nous avons été récompensés dans les catégories « Meilleur produit de
+gestion de contenu Web » et « Meilleure solution de conformité avec les
+réglementations ».
+
+[En savoir plus
+\>](https://community.websense.com/blogs/websense-accolades/archive/2013/02/27/websense-takes-home-best-web-content-management-and-best-regulatory-compliance-at-the-2013-sc-magazine-awards-us.aspx?intcmp=hp-promo-pod-fr-SC-Awards-2013)
+
+[![](http://ssdreddot3/assets/imgs/2013/ws2013-hp-promo-cs-2013-award.png)](https://community.websense.com/blogs/websense-accolades/archive/2013/02/27/websense-takes-home-best-web-content-management-and-best-regulatory-compliance-at-the-2013-sc-magazine-awards-us.aspx?intcmp=hp-promo-pod-fr-SC-Awards-2013)
+
+#### [Reality Check : TRITON neutralise davantage de menaces.](/content/miercom-report-2013.aspx?intcmp=hp-promo-pod-fr-miercom-report-2013)
+
+Notre livre blanc « Reality Check » vous propose des informations
+essentielles en complément des résultats des tests du rapport Miercom.
+
+[Obtenez le livre blanc
+\>](/content/miercom-report-2013.aspx?intcmp=hp-promo-pod-fr-miercom-report-2013)
+
+[![](http://ssdreddot3/assets/imgs/2013/ws2013-hp-promo-miercom-report.png)](/content/miercom-report-2013.aspx?intcmp=hp-promo-pod-fr-miercom-report-2013)
+
+#### [TRITON : sécurité unifiée, intelligente et en temps réel](/content/websense-triton-security-products.aspx?intcmp=hp-promos-fr-triton)
+
+L'architecture Websense TRITON est la base de nos solutions de sécurité
+des données, mobile, de messagerie et Web. Elle nous aide à offrir une
+solution de sécurité complète et facile à gérer au coût total de
+possession le plus bas.
+
+[En savoir plus
+\>](/content/websense-triton-security-products.aspx?intcmp=hp-promos-fr-triton)
+
+#### [Suites de produits TRITON : une sécurité de l'information complète](/content/websense-triton-security-products.aspx?intcmp=hp-promos-fr-tritonSolutions)
+
+Sécurisez votre Web, votre messagerie et vos données en choisissant
+parmi nos trois solutions.
+
+[En savoir plus
+\>](/content/websense-triton-security-products.aspx?intcmp=hp-promos-fr-tritonSolutions)
+
+#### [Pourquoi nous sommes différents : Websense ACE\
+ (Advanced Classification Engine)](/content/websense-advanced-classification-engine.aspx?intcmp=hp-promos-fr-ace)
+
+Websense ACE est le moteur derrière tous nos produits de sécurité des
+données, Web, mobile et de messagerie.
+
+[Learn more
+\>](/content/websense-advanced-classification-engine.aspx?intcmp=hp-promos-fr-ace)
+
+#### [Reality Check: TRITON stoppt mehr Bedrohungen](miercom-report-2013.aspx?intcmp=hp-promo-pod-de-miercom-report-2013)
+
+Das Whitepaper "Reality Check" bietet wichtige Ergänzungen zu den
+Testergebnissen des Miercom-Berichts.
+
+[Whitepaper lesen
+\>](miercom-report-2013.aspx?intcmp=hp-promo-pod-de-miercom-report-2013)
+
+[![](http://ssdreddot3/assets/imgs/2013/ws2013-hp-promo-miercom-report.png)](miercom-report-2013.aspx?intcmp=hp-promo-pod-de-miercom-report-2013)
+
+#### [SpeakUp Events 2013](http://de.websense.com/content/speakup-dach-events-Nov13-de.aspx?intcmp=hp-promo-pod-de-Nov13-speakup-events-dach)
+
+Wer hat Seine Finger an Ihren Daten?\
+ Melden Sie sich heute noch an.\
  \
- VLAN\
+ [Anmeldung
+\>](http://de.websense.com/content/speakup-dach-events-Nov13-de.aspx?intcmp=hp-promo-pod-de-Nov13-speakup-events-dach)
 
-高级网络模式中默认是通过VLAN进行虚拟机实例之间的相互隔离．当一个账户的第一个虚拟机被创建并运行时，一个隔离的网络也同时创建完成．在一个资源域下，一个账户的虚拟机网络默认的CIDR配置：10.1.1.0/24；在整个云环境中,只有系统管理员有权限创建一个隔离的客户虚拟机网络，并指定一个IP范围和一个VLAN．
+[![](http://de.websense.com/assets/imgs/thumbnails/thumbnail-speakup-dach-venue-arena.png)](http://de.websense.com/content/speakup-dach-events-Nov13-de.aspx?intcmp=hp-promo-pod-de-Nov13-speakup-events-dach)
 
- 
+#### [Wir stellen Websense® TRITON® v7.8 vor](https://www1.gotomeeting.com/register/280692833?intcmp=hp-promo-pod-de-78-launch-webinar)
 
- 
+Verbessern Sie Ihren Schutz gegen Zero-Day Bedrohungen mit dem neuem
+TRITON Release\
+ Dienstag, den 19. November
 
-二、OpenStack网络设计
+[Melden Sie sich jetzt an
+\>](https://www1.gotomeeting.com/register/280692833?intcmp=hp-promo-pod-de-78-launch-webinar)
 
-1、OpenStack中nova-network的作用
+[![](http://reddot.websense.com/assets/imgs/thumbnails/thumbnail-hugo-virus.png)](https://www1.gotomeeting.com/register/280692833?intcmp=hp-promo-pod-de-78-launch-webinar)
 
-OpenStack平台中有两种类型的物理节点，控制节点和计算节点。控制节点包括网络控制、调度管理、api服务、存储卷管理、数据库管理、身份管理和镜像管理等，计算节点主要提供nova-compute服务。控制节点的服务可以分开在多个节点，我们把提供nova-network服务的节点称为网络控制器。
+#### [TRITON: Vereinheitlicht, intelligent\
+ und mit Echtzeitsicherheit](websense-triton-security-products.aspx?intcmp=hp-promos-de-triton)
 
-OpenStack的网络由nova-network（网络控制器）管理，它会创建虚拟网络，使主机之间以及与外部网络互相访问。
+Die Architektur von Websense TRITON bildet die Grundlage für unsere
+Web-, E-Mail-, Mobil- und Datensicherheitslösungen. Damit können wir
+umfangreiche und einfach zu verwaltende Sicherheitssysteme zu äußerst
+geringen Gesamtbetriebskosten bereitstellen.
 
-OpenStack的API服务器通过消息队列分发nova-network提供的命令，这些命令之后会被nova-network处理，主要的操作有：分配ip地址、配置虚拟网络和通信。
+[Weitere Informationen
+\>](websense-triton-security-products.aspx?intcmp=hp-promos-de-triton)
 
- 
+#### [TRITON-Lösungs-Suites:\
+ Umfassende Informationssicherheit](websense-triton-security-products.aspx?intcmp=hp-promos-de-tritonSolutions)
 
-区分以下两个概念：控制节点和网络控制器
+Sie erhalten drei Lösungen zur Gewährleistung von Web-Sicherheit,
+E-Mail-Sicherheit und DLP-Funktionalität.
 
-在最简单的情况下，所有服务都部署在一个主机，这就是all-in-one；
+[Weitere Informationen
+\>](websense-triton-security-products.aspx?intcmp=hp-promos-de-tritonSolutions)
 
-稍微复杂点，除了nova-compute外所有服务都部署在一个主机，这个主机进行各种控制管理，因此也就是控制节点（本文把2个或以上节点的部署都称为“多节点”）；
+#### [Warum wir anders sind: Websense ACE (Advanced Classification Engine)\
+ (Advanced Classification Engine)](websense-advanced-classification-engine.aspx?intcmp=hp-promos-de-ace)
 
-但是，很多情况下（比如为了高可用性），需要把各种管理服务分别部署在不同主机（比如分别提供数据库集群服务、消息队列、镜像管理、网络控制等）。这个时候网络控制器（运行nova-network）只是控制节点群中的一部分。
+Websense ACE bildet das Rückgrat für all unsere Sicherheitsprodukte in
+den Bereichen Web, E-Mail, Daten und Mobilität.
 
- 
+[Weitere Informationen
+\>](websense-advanced-classification-engine.aspx?intcmp=hp-promos-de-ace)
 
-2、OpenStack中network的2种ip、3种管理模式
+#### Gartner
 
-Nova有固定IP和浮动IP的概念。固定IP被分发到创建的实例不再改变，浮动IP是一些可以和实例动态绑定和释放的IP地址。
+Gartner nomina Websense Leader in due dei Magic Quadrant quest'anno.
 
-Nova支持3种类型的网络，对应3种“网络管理”类型：Flat管理模式、FlatDHCP管理模式、VLAN管理模式。默认使用VLAN摸式。
+[Magic Quadrant for Secure Web Gateways
+\>](http://www.websense.com/content/gartner-magic-quadrant-secure-web-gateways-2013.aspx?intcmp=hp-promo-pod-it-gartner-swg-2013)
 
-这3种类型的网络管理模式，可以在一个ОpenStack部署里面共存，可以在不同节点不一样，可以进行多种配置实现高可用性。
+[Magic Quadrant for Data Loss Prevention
+\>](http://www.websense.com/content/gartner-magic-quadrant-content-aware-data-loss-prevention-2013.aspx?intcmp=hp-promo-pod-it-gartner)
 
-简要介绍这3种管理模式，后面再详细分析。
+![](http://ssdreddot3/assets/imgs/2013/ws2013-hp-promo-gartner-swg-dlp-thumb.png)
 
-1.  Flat（扁平）： 所有实例桥接到同一个虚拟网络，需要手动设置网桥。
-2.  FlatDHCP： 与Flat（扁平）管理模式类似，这种网络所有实例桥接到同一个虚拟网络，扁平拓扑。不同的是，正如名字的区别，实例的ip提供dhcp获取（nova-network节点提供dhcp服务），而且可以自动帮助建立网桥。
-3.  VLAN： 为每个项目提供受保护的网段（虚拟LAN）。
+#### [Report sulle minacce\
+ Websense® 2013](websense-2013-threat-report.aspx?intcmp=hp-promo-pod-it-2013-threat-report)
 
- 
+Scopri perché la tua fiducia nelle misure di sicurezza tradizionali
+potrebbe essere mal riposta.
 
-**一）****3种网络模式的工作机制**
+[Scarica il report
+\>](websense-2013-threat-report.aspx?intcmp=hp-promo-pod-it-2013-threat-report)
 
-**•****Flat模式**
+[![](http://ssdreddot3/assets/imgs/2013/ws2013-hp-promo-2013-threat-report-thumb.png)](websense-2013-threat-report.aspx?intcmp=hp-promo-pod-it-2013-threat-report)
 
-1）指定一个子网，规定虚拟机能使用的ip范围，也就是一个ip池（
+#### [Alla prova dei fatti:\
+ TRITON arresta più\
+ minacce](miercom-report-2013.aspx?intcmp=hp-promo-pod-it-miercom-report-2013)
 
--   分配ip不会超过这个范围，也就是配置里面的fixed\_range，比如10.0.0.1/27，那么可用ip就有32个；
--   这个网络是可以改变的，比如配置好节点nova.conf和interfaces后，nova-manage
-    network delete 10.0.0.1/27 1 32；nova-manage network
-    create192.168.1.0/24 1 255
+Il nostro white paper, basato su fatti e non su ipotesi, aggiunge
+contesto cruciale ai risultati del test illustrati nel report Miercom.
 
-）；
+[Leggi/scarica il white paper
+\>](miercom-report-2013.aspx?intcmp=hp-promo-pod-it-miercom-report-2013)
 
-2）创建实例时，从有效ip地址池接取一个IP，为虚拟机实例分配，然后在虚拟机启动时候注入虚拟机镜像（文件系统）；
+[![](http://ssdreddot3/assets/imgs/2013/ws2013-hp-promo-miercom-report.png)](miercom-report-2013.aspx?intcmp=hp-promo-pod-it-miercom-report-2013)
 
-3）必须手动配置好网桥（br100），所有的系统实例都是和同一个网桥连接；网桥与连到网桥的实例组成一个虚拟网络，nova-network所在的节点作为默认网关。比如flat\_interface=eth1;eth1的ip为10.0.0.1，其它网络ip在10.0.0.1/27内。flat
-interface--\>br100--\>flat network
+#### [TRITON: sicurezza unificata, intelligente\
+ e in tempo reale](websense-triton-security-products.aspx?intcmp=hp-promos-it-triton)
 
-4）此后，网络控制器（nova-network节点）对虚拟机实例进行NAT转换，实现与外部的通信。
+L'architettura Websense TRITON è alla base delle nostre soluzioni di
+sicurezza web, e-mail, dei dispositivi mobili e dei dati. Ci consente di
+offrire sicurezza completa, facilmente gestibile al minor Total Cost of
+Ownership (TCO).
 
-注意：目前好像配置注入只能够对Linux类型的操作系统实例正常工作，网络配置保存在/etc/network/interfaces文件。
+[Per saperne di più
+\>](websense-triton-security-products.aspx?intcmp=hp-promos-it-triton)
 
- 
+#### [Suite della soluzione TRITON:\
+ sicurezza informatica completa](websense-triton-security-products.aspx?intcmp=hp-promos-it-tritonSolutions)
 
-**•****Flat DHCP模式**
+Ottieni sicurezza web, sicurezza e-mail e funzionalità DLP con la scelta
+di tre soluzioni.
 
-与Flat模式一样，从ip池取出ip分配给虚拟机实例，所有的实例都在计算节点中和一个网桥相关。不过，在这个模式里，控制节点做了更多一些的配置，尝试和以太网设备(默认为eth0)建立网桥，通过dhcp自动为实例分配flat网络的固定ip，可以回收释放ip。
+[Per saperne di più
+\>](websense-triton-security-products.aspx?intcmp=hp-promos-it-tritonSolutions)
 
-1）网络控制器（运行nova-network服务的节点）运行dusmasq作为DHCP服务器监听这个网桥；
+#### [La nostra differenza: Websense ACE\
+ (Advanced Classification Engine)](websense-advanced-classification-engine.aspx?intcmp=hp-promos-it-ace)
 
-2）实例做一次dhcp discover操作，发送请求；
+Websense ACE è la tecnologia alla base di tutti i nostri prodotti per la
+sicurezza web, e-mail, dei dati e dei dispositivi mobili.
 
-3）网络控制器把从一个指定的子网中获得的IP地址响应给虚拟机实例；
+[Per saperne di più
+\>](websense-advanced-classification-engine.aspx?intcmp=hp-promos-it-ace)
 
-4）实例通过网络控制器与外部实现互相访问。
+#### [Websense® 2013\
+ 威胁报告](http://www.websense.com/content/websense-2013-threat-report.aspx?intcmp=hp-promo-pod-sch-2013-threat-report)
 
- 
+了解为何您喜爱的站点、社交网络甚至是安全提供商都正在经历一场信任危机。
 
-**•****VLAN网络模式**
+[获取报告
+\>](http://www.websense.com/content/websense-2013-threat-report.aspx?intcmp=hp-promo-pod-sch-2013-threat-report)
+（英文版）
 
-OpenStack的默认网络管理模式，没有设置--network\_manager=nova.network.manager.FlatDHCPManager或者FlatManager的时候默认为vlan。为了实现多台机器的安装，VLAN网络模式需要一个支持VLAN标签(IEEE
-802.1Q)的交换机（switch）。
+[![](http://ssdreddot3/assets/imgs/2013/ws2013-hp-promo-2013-threat-report-thumb.png)](http://www.websense.com/content/websense-2013-threat-report.aspx?intcmp=hp-promo-pod-sch-2013-threat-report)
 
-在这个模式里，为每个项目创建了VLAN和网桥。所有属于某个项目的实例都会连接到同一个VLAN，必要的时候会创建Linux网桥和VLAN。
+#### [TRITON® 阻止更多威胁。](http://www.websense.com/content/miercom-report-2013.aspx?intcmp=hp-promo-pod-sch-miercom-report-2013)
 
-每个项目获得一些只能从VLAN内部访问的私有IP地址，即私网网段。每个项目拥有它自己的VLAN，Linux网桥还有子网。被网络管理员所指定的子网都会在需要的时候动态地分配给一个项目。
+独立的实验室结果确认在现实世界的网络环境中，TRITON
+可以比竞争对手的安全解决方案阻止更多的威胁。
 
-1）网络控制器上的DHCP服务器为所有的VLAN所启动，从被分配到项目的子网中获取IP地址并传输到虚拟机实例。
+[获取报告
+\>](http://www.websense.com/content/miercom-report-2013.aspx?intcmp=hp-promo-pod-en-miercom-report-2013)
+（英文版）
 
-2）为了实现用户获得项目的实例，访问私网网段，需要创建一个特殊的VPN实例（代码名为cloudpipe，用了创建整数、key和vpn访问实例）。
+[![](http://ssdreddot3/assets/imgs/2013/ws2013-hp-promo-miercom-report.png)](http://www.websense.com/content/miercom-report-2013.aspx?intcmp=hp-promo-pod-sch-miercom-report-2013)
 
-3）计算节点为用户生成了证明书和key，使得用户可以访问VPN，同时计算节点自动启动VPN。
+#### [社交媒体](social-web-security-solutions.aspx?intcmp=hp-promo-pod-sch-social-media)
 
-4）vpn访问。
+社交 Web 控制可让企业安全无忧地使用社交媒体。
 
-**Flat与vLAN的比较**
+[更多信息
+\>](social-web-security-solutions.aspx?intcmp=hp-promo-pod-sch-social-media)
 
-在两种Flat模式里，网络控制器扮演默认网关的角色，实例都被分配了公共的IP地址（扁平式结构，都在一个桥接网络里）。
+[![](http://ssdreddot3/assets/imgs/thumbnails/thumbnail-social-media-logos.png)](social-web-security-solutions.aspx?intcmp=hp-promo-pod-sch-social-media)
 
-vLAN模式功能丰富，很适合提供给企业内部部署使用。但是，需要支持vLAN的switches来连接，而且相对比较复杂，在小范围实验中常采用FlatDHCP模式。
+#### [TRITON: 统一、\
+ 智能和实时安全](websense-triton-security-products.aspx?intcmp=hp-promos-sch-triton)
 
-二）**详解****FlatDHCP模式**（Flat模式类似，只是少了dhcp的部分而已，就略过了）
+Websense TRITON 架构是我们
+Web、电子邮件、移动以及数据安全解决方案的基础。该架构有助于我们以最低总体拥有成本提供全面、易于管理的安全保障。
 
-可以有多种部署方式，比如为了实现高可用性，可以使用多网卡、外部网关、multi\_host
-等方法。这里主要介绍基本的部署方式（一个控制节点，或者说一个网络控制器）。
+[了解更多
+\>](websense-triton-security-products.aspx?intcmp=hp-promos-sch-triton)
 
-1、网卡与节点
+#### [TRITON 解决方案套件：\
+ 完善的信息安全](websense-triton-security-products.aspx?intcmp=hp-promos-sch-tritonSolutions)
 
-由于网卡和节点数的不同，可以简单分为：单节点（all-in-one）单网卡、多节点单网卡、多节点单网卡、多节点多网卡
+选用三大解决方案，获得 Web 安全、电子邮件安全和 DLP 功能。
 
-单节点的情况下，网络控制器（运行nova-network）与计算（运行nova-compute，或者更确切的说，运行虚拟机实例）部署在一个主机。这样就不需要控制节点与计算节点之间的通信，也就少了很多网络概念，这也是入门者常用的方式。
+[了解更多
+\>](websense-triton-security-products.aspx?intcmp=hp-promos-sch-tritonSolutions)
 
-多节点时，网络控制器与计算节点分别在不同主机，普通部署方式下（不是multi\_host），只有nova-network控制网络，而它仅仅在控制节点运行。因此，所有计算节点的实例都需要通过控制节点来与外网通信。
+#### [我们的优势： Websense ACE\
+ (Advanced Classification Engine)](websense-advanced-classification-engine.aspx?intcmp=hp-promos-sch-ace)
 
- 
+Websense ACE 是所有 Web、电子邮件、数据以及移动安全产品的坚实后盾。
 
-单网卡时，网卡需要作为public网络的接口使用，也需要作为flat网络的接口，因此需要处于混杂模式。不过建立的网络与双网卡类似，都分为flat网络和public网络。
+[了解更多
+\>](websense-advanced-classification-engine.aspx?intcmp=hp-promos-sch-ace)
 
-使用单网卡，需要在nova.conf中使public\_interface和flat\_interface都为eth0。
+#### [Websense® 2013\
+ 威脅報告](http://www.websense.com/content/websense-2013-threat-report.aspx?intcmp=hp-promo-pod-tch-2013-threat-report)
 
- 
+資料竊取、有針對性的攻擊和入侵程式套件正在重新界定威脅範疇。
+您的安全防護是否完備？
 
-2、网络流
+[取得報告
+\>](http://www.websense.com/content/websense-2013-threat-report.aspx?intcmp=hp-promo-pod-tch-2013-threat-report)
 
-如上面分析，在普通部署方式下，只有一个控制节点（或网络控制器），dhcp和外网访问都需要经过它。
+[![](http://ssdreddot3/assets/imgs/2013/ws2013-hp-promo-2013-threat-report-thumb.png)](http://www.websense.com/content/websense-2013-threat-report.aspx?intcmp=hp-promo-pod-tch-2013-threat-report)
 
-dhcp时：
+#### [沒有人能比 TRITON® 阻止更多威脅。](http://www.websense.com/content/miercom-report-2013.aspx?intcmp=hp-promo-pod-tch-miercom-report-2013)
 
-1）网络控制器（运行nova-network服务的节点）一直运行dusmasq作为DHCP服务器监听网桥（br100）；
+獨立的實驗室測試結果證實，在現實世界的網路環境中，TRITON
+能比競爭的安全性解決方案阻止更多威脅。
 
-2）实例做一次dhcp discover操作，发送请求；
+[取得報告
+\>](http://www.websense.com/content/miercom-report-2013.aspx?intcmp=hp-promo-pod-tch-miercom-report-2013)
 
-3）网络控制器把从一个指定的子网中获得的IP地址响应给虚拟机实例。
+[![](http://ssdreddot3/assets/imgs/2013/ws2013-hp-promo-miercom-report.png)](http://www.websense.com/content/miercom-report-2013.aspx?intcmp=hp-promo-pod-tch-miercom-report-2013)
 
-实例访问外网时：
+#### [社交媒體](social-web-security-solutions.aspx?intcmp=hp-promo-pod-tch-social-media)
 
-1）实例经过所在主机的flat\_interface（这是一个flat网络），连接到nova-network所在的主机（控制节点）；
+Websense
+的新社交網路控制功能可讓您從社交網路受益，同時提升產能並降低風險。
 
-2）网络控制器对外出网络流进行转发。
+[瞭解詳情
+\>](social-web-security-solutions.aspx?intcmp=hp-promo-pod-tch-social-media)
 
-外网访问实例时：
+[![](http://ssdreddot3/assets/imgs/thumbnails/thumbnail-social-media-logos.png)](social-web-security-solutions.aspx?intcmp=hp-promo-pod-tch-social-media)
 
-1）网络控制器对floating ip进行nat；
+#### [TRITON：統一、智慧和即時安全性](websense-triton-security-products.aspx?intcmp=hp-promos-tch-triton)
 
-2）通过flat网络将流入数据路由给对应的实例。
+Websense TRITON
+安全防禦架構是我們的網路、電子郵件、行動裝置和資料安全性解決方案的基礎。
 
-下图1、图2可以比较单网卡和双网卡的网络流（traffic）情况，图2、图3可以比较单节点和多节点的网络流。
+[瞭解詳情
+\>](websense-triton-security-products.aspx?intcmp=hp-promos-tch-triton)
 
-![http://my.csdn.net/uploads/201207/07/1341648628\_2648.png](OpenStack-CloudStack%20Network%20Design_files/image003.png)
+#### [TRITON 解決方案套件：\
+ 完整的資訊安全](websense-triton-security-products.aspx?intcmp=hp-promos-tch-tritonSolutions)
 
-图1：双网卡多节点OpenStack网络流
+您可以選擇以下三種解決方案中的一種，以實現網路安全性、電子郵件安全性及
+DLP（資料遺失防護）功能。
 
-![http://my.csdn.net/uploads/201207/07/1341648622\_7142.png](OpenStack-CloudStack%20Network%20Design_files/image004.png)
+[瞭解詳情
+\>](websense-triton-security-products.aspx?intcmp=hp-promos-tch-tritonSolutions)
 
-图2：单网卡多节点OpenStack网络流
+#### [我們的優勢： Websense ACE\
+ (先進分類引擎)](websense-advanced-classification-engine.aspx?intcmp=hp-promos-tch-ace)
 
-![http://my.csdn.net/uploads/201207/07/1341648616\_5248.png](OpenStack-CloudStack%20Network%20Design_files/image005.png)
+Websense
+ACE（先進分類引擎）是我們所有的網路、電子郵件、資料及行動裝置安全防禦產品的核心技術。
 
-图3：单网卡单节点OpenStack网络流
+[瞭解詳情
+\>](websense-advanced-classification-engine.aspx?intcmp=hp-promos-tch-ace)
 
-3、多节点时控制节点和计算节点的工作原理
+#### [Products](/content/websense-products.aspx)
 
-控制节点：
+-   [TRITON
+    Enterprise](/content/websense-triton-enterprise-features.aspx)
+-   [TRITON Security Gateway
+    Anywhere](/content/websense-triton-security-gateway-anywhere-features.aspx)
+-   [TRITON Security
+    Gateway](/content/websense-triton-web-security-gateway-features.aspx)
+-   [TRITON ThreatScope](/content/websense-threatscope.aspx)
+-   [Web Security Gateway
+    Anywhere](/content/web-security-gateway-anywhere-features.aspx)
+-   [Web Security Gateway](/content/web-security-gateway-features.aspx)
+-   [Cloud Web Security
+    Gateway](/content/cloud-web-security-gateway-features.aspx)
+-   [ACE in the Cloud](/content/ace-in-the-cloud-features.aspx)
+-   [Web Security](/content/web-security-features.aspx)
+-   [Cloud Web Security](/content/cloud-web-security-features.aspx)
+-   [Web Filter](/content/web-filter-features.aspx)
+-   [TRITON Riskvision](websense-triton-riskvision-features.aspx)
+-   [Email Security Gateway
+    Anywhere](/content/email-security-gateway-anywhere-features.aspx)
+-   [Email Security
+    Gateway](/content/email-security-gateway-features.aspx)
+-   [Cloud Email Security and Content
+    Control](/content/cloud-email-security-and-content-control-features.aspx)
 
-1）在主机上创建一个网桥（br100），把网关ip赋给这个桥；如果已经有ip，会自动把这个ip赋给网桥作为网关，并修复网关；
+-   [Data Security Suite](/content/data-security-suite-features.aspx)
+-   [Data Security
+    Gateway](/content/data-security-gateway-features.aspx)
+-   [Data Discover](/content/data-discover-features.aspx)
+-   [Data Endpoint](/content/data-endpoint-features.aspx)
+-   [TRITON Mobile
+    Security](/content/triton-mobile-security-features.aspx)
+-   [CyberSecurity Intelligence
+    (CSI)](/content/cybersecurity-intelligence-services.aspx)
 
-2）建立dhcp
-server，监听这个网桥；并在数据库记录ip的分配和释放，从而判定虚拟机释放正常关闭dhcp；
+#### [Solutions](/content/solutions-center.aspx)
 
-3）监听到ip请求时，从ip池取出ip，响应这个ip给实例；
+-   [Enterprise](/content/enterprise-solutions.aspx)
+-   [Small and Medium Business](/content/smb-solutions.aspx)
+-   [Federal](/content/federal-solutions.aspx)
+-   [Finance and Banking](/content/finance-and-banking-solutions.aspx)
+-   [Health Care](/content/health-care-solutions.aspx)
+-   [Education: K-12](/content/k-12-education-solutions.aspx)
 
-4）建立iptables规则，限制和开放与外网的通信或与其它服务的访问。
+-   [Grandes Empresas](/content/enterprise-solutions.aspx)
+-   [Pequenas e Médias Empresas](/content/smb-solutions.aspx)
+-   [Finanças e bancos](/content/finance-and-banking-solutions.aspx)
+-   [Saúde](/content/health-care-solutions.aspx)
 
-计算节点：
+-   [Empresas](/content/enterprise-solutions.aspx)
+-   [Pequeñas y medianas empresas](/content/smb-solutions.aspx)
+-   [Banca y finanzas](/content/finance-and-banking-solutions.aspx)
+-   [Salud](/content/health-care-solutions.aspx)
 
-1）在主机上建立一个对应控制节点的网桥（br100），把其上实例（虚拟机）桥接到一个网络（br100所在的网络）；
+-   [Grandes entreprises](/content/enterprise-solutions.aspx)
+-   [Petites et moyennes entreprises](/content/smb-solutions.aspx)
+-   [Banque et finance](/content/finance-and-banking-solutions.aspx)
+-   [Santé](/content/health-care-solutions.aspx)
 
-2）此后，这个桥、控制节点的桥和实例的虚拟网卡都在同一虚拟网络，通过控制节点对外访问。
+-   [Unternehmen](/content/enterprise-solutions.aspx)
+-   [Kleine und mittelständische
+    Unternehmen](/content/smb-solutions.aspx)
+-   [Finanzen und Banken](/content/finance-and-banking-solutions.aspx)
+-   [Gesundheitswesen](/content/health-care-solutions.aspx)
 
-可见，这种方式有以下特点：
+-   [Grandi Imprese](/content/enterprise-solutions.aspx)
+-   [Piccole e medie imprese](/content/smb-solutions.aspx)
+-   [Banche e finanza](/content/finance-and-banking-solutions.aspx)
+-   [Sanità](/content/health-care-solutions.aspx)
 
-1）所有实例与外网通信都经过网络控制器，这也就是SPoF（单故障点）；
+-   [大型企业](/content/enterprise-solutions.aspx)
+-   [中小型企业](/content/smb-solutions.aspx)
+-   [金融和银行](/content/finance-and-banking-solutions.aspx)
+-   [医疗](/content/health-care-solutions.aspx)
 
-2）控制节点提供dhcp服务、nat、建立子网，作为虚拟网络的网关；
+-   [湮倰业](/content/enterprise-solutions.aspx)
+-   [中小型企業](/content/smb-solutions.aspx)
+-   [金融與銀行](/content/finance-and-banking-solutions.aspx)
+-   [保健](/content/health-care-solutions.aspx)
 
-3）计算节点可以没有外网ip，同其上的实例一样，可以把控制节点作为网关对外访问；
+-   [Education: Higher](/content/higher-education-solutions.aspx)
+-   [Compliance](/content/regulatory-compliance-solutions.aspx)
+-   [Social Media](/content/social-web-security-solutions.aspx)
 
-4）实例与外网通信太多，会造成控制节点网络的堵塞或者高负载。
+#### [Downloads](/content/websense-downloads.aspx)
 
- 
+-   [White Papers](/content/websense-white-papers.aspx)
+-   [Datasheets](/content/websense-datasheets.aspx)
+-   [Case Studies](/content/websense-case-studies.aspx)
+-   [Videos](/content/websense-videos.aspx)
+-   [Demos](/content/websense-demos.aspx)
+-   [Free Trials](/content/websense-free-trials.aspx)
+-   [Brochures](/content/websense-brochures.aspx)
+-   [Industry Analyst Reports](/content/industry-analyst-reports.aspx)
+-   [Webcasts](/content/websense-webinars.aspx)
+
+#### [Security Labs](http://securitylabs.websense.com/)
+
+-   [Home](http://securitylabs.websense.com/)
+-   [Blog](http://community.websense.com/blogs/securitylabs/)
+-   [Report Malicious Activity](http://csi.websense.com/)
+-   [2013 Security
+    Predictions](/content/websense-2013-security-predictions.html)
+-   [2013 Threat Report](/content/websense-2013-threat-report.aspx)
+
+#### [Security Labs](http://securitylabs.websense.com/)
+
+-   [Início](http://securitylabs.websense.com/)
+-   [Blog](http://community.websense.com/blogs/securitylabs/)
+-   [Comunique atividades
+    maliciosas](http://securitylabs.websense.com/content/reportMalicious.aspx)
+-   [Relatório de Ameaças Websense
+    2013](http://www.websense.com/content/websense-2013-threat-report.aspx)
+
+#### [Security Labs](http://securitylabs.websense.com/)
+
+-   [Inicio](http://securitylabs.websense.com/)
+-   [Blog](http://community.websense.com/blogs/securitylabs/)
+-   [Denuncie actividad
+    maliciosa](http://securitylabs.websense.com/content/reportMalicious.aspx)
+-   [2013 Informe de
+    Amenazas](/content/websense-2013-threat-report.aspx)
+
+#### [Security Labs](http://securitylabs.websense.com/)
+
+-   [Accueil](http://securitylabs.websense.com/)
+-   [Blog](http://community.websense.com/blogs/securitylabs/)
+-   [Rapport sue les Activités
+    Malveillantes](http://securitylabs.websense.com/content/reportMalicious.aspx)
+-   [2013 Threat Report](/content/websense-2013-threat-report.aspx)
+
+#### [Security Labs](http://securitylabs.websense.com/)
+
+-   [Startseite](http://securitylabs.websense.com/)
+-   [Blog](http://community.websense.com/blogs/securitylabs/)
+-   [Verdächtige Inhalte
+    melden](http://securitylabs.websense.com/content/reportMalicious.aspx)
+-   [2013 Threat
+    Report](http://www.websense.com/content/websense-2013-threat-report.aspx)
+
+#### [Security Labs](http://securitylabs.websense.com/)
+
+-   [Home](http://securitylabs.websense.com/)
+-   [Blog](http://community.websense.com/blogs/securitylabs/)
+-   [Segnalare attività
+    malevole.](http://securitylabs.websense.com/content/reportMalicious.aspx)
+-   [Report sulle minacce di Websense
+    2013](http://www.websense.com/content/websense-2013-threat-report.aspx)
+
+#### [Security Labs](http://securitylabs.websense.com/)
+
+-   [主页](http://securitylabs.websense.com/)
+-   [博客](http://community.websense.com/blogs/securitylabs/)
+-   [报告恶意活动](http://securitylabs.websense.com/content/reportMalicious.aspx)
+-   [2013 威胁报告](/content/websense-2013-threat-report.aspx)
+
+#### [Security Labs](http://securitylabs.websense.com/)
+
+-   [首頁](http://securitylabs.websense.com/)
+-   [部落格](http://community.websense.com/blogs/securitylabs/)
+-   [報告惡意活動](http://csi.websense.com/)
+-   [2013 Threat Report](/content/websense-2013-threat-report.aspx)
+
+#### [Support](/content/support.aspx)
+
+-   [Support by Product](/content/SupportByProduct.aspx)
+-   [Solution Center](/content/KnowledgeBase.aspx)
+-   [Technical Library](/content/support/library/technical-library.aspx)
+-   [Forums](http://community.websense.com/forums/)
+-   [Tools and Policies](/content/toolsandpolicies.aspx)
+-   [Contact Support](/content/contactSupport.aspx)
+-   [MyWebsense Login](/content/mywebsense-subscriptions.aspx)
+-   [TRITON® Advisory Board
+    (TAB)](/content/websense-triton-advisory-board.aspx)
+
+-   [Suporte por
+    produto](http://www.websense.com/content/SupportByProduct.aspx)
+-   [Centro de
+    Soluções](http://www.websense.com/content/KnowledgeBase.aspx)
+-   [Biblioteca
+    técnica](http://www.websense.com/content/support/library/technical-library.aspx)
+-   [Fóruns](http://community.websense.com/forums/)
+-   [Ferramentas e
+    políticas](http://www.websense.com/content/toolsandpolicies.aspx)
+-   [Contato com o
+    suporte](http://www.websense.com/content/contactSupport.aspx)
+-   [Login em
+    MyWebsense](http://www.websense.com/content/mywebsense-subscriptions.aspx)
+-   [TRITON™ Advisory Board
+    (TAB)](http://www.websense.com/content/websense-triton-advisory-board.aspx)
+
+-   [Suporte por
+    produto](http://www.websense.com/content/SupportByProduct.aspx)
+-   [Centro de
+    Soluções](http://www.websense.com/content/KnowledgeBase.aspx)
+-   [Biblioteca
+    técnica](http://www.websense.com/content/support/library/technical-library.aspx)
+-   [Fóruns](http://community.websense.com/forums/)
+-   [Ferramentas e
+    políticas](http://www.websense.com/content/toolsandpolicies.aspx)
+-   [Contato com o
+    suporte](http://www.websense.com/content/contactSupport.aspx)
+-   [Login em
+    MyWebsense](http://www.websense.com/content/mywebsense-subscriptions.aspx)
+-   [TRITON™ Advisory Board
+    (TAB)](http://www.websense.com/content/websense-triton-advisory-board.aspx)
+
+-   [Support technique par
+    produit](http://www.websense.com/content/SupportByProduct.aspx)
+-   [Centre de
+    solutions](http://www.websense.com/content/KnowledgeBase.aspx)
+-   [Bibliothèque
+    technique](http://www.websense.com/content/support/library/technical-library.aspx)
+-   [Forums](http://community.websense.com/forums/)
+-   [Outils et
+    politiques](http://www.websense.com/content/toolsandpolicies.aspx)
+-   [Contacter le Support
+    technique](http://www.websense.com/content/contactSupport.aspx)
+-   [MyWebsense](http://www.websense.com/content/mywebsense-subscriptions.aspx)
+-   [TRITON™ Advisory Board
+    (TAB)](http://www.websense.com/content/websense-triton-advisory-board.aspx)
+
+-   [Support nach
+    Produkten](http://www.websense.com/content/SupportByProduct.aspx)
+-   [Hilfe Zentrum](http://www.websense.com/content/KnowledgeBase.aspx)
+-   [Technische
+    Bibliothek](http://www.websense.com/content/support/library/technical-library.aspx)
+-   [Foren](http://community.websense.com/forums/)
+-   [Tools &
+    Richtlinien](http://www.websense.com/content/toolsandpolicies.aspx)
+-   [Den Support
+    kontaktieren](http://www.websense.com/content/contactSupport.aspx)
+-   [MyWebsense](http://www.websense.com/content/mywebsense-subscriptions.aspx)
+-   [TRITON™ Advisory Board
+    (TAB)](http://www.websense.com/content/websense-triton-advisory-board.aspx)
+
+-   [Supporto per
+    prodotto](http://www.websense.com/content/SupportByProduct.aspx)
+-   [Centro
+    soluzioni](http://www.websense.com/content/KnowledgeBase.aspx)
+-   [Biblioteca
+    tecnica](http://www.websense.com/content/support/library/technical-library.aspx)
+-   [Forum](http://community.websense.com/forums/)
+-   [Strumenti e
+    Policy](http://www.websense.com/content/toolsandpolicies.aspx)
+-   [Contatta il
+    supporto](http://www.websense.com/content/contactSupport.aspx)
+-   [MyWebsense](http://www.websense.com/content/mywebsense-subscriptions.aspx)
+-   [TRITON™ Advisory Board
+    (TAB)](http://www.websense.com/content/websense-triton-advisory-board.aspx)
+
+-   [产品支持](http://www.websense.com/content/SupportByProduct.aspx)
+-   [解决方案中心](http://www.websense.com/content/KnowledgeBase.aspx)
+-   [技术文档库](http://www.websense.com/content/support/library/technical-library.aspx)
+-   [论坛](http://community.websense.com/forums/)
+-   [工具和政策](http://www.websense.com/content/toolsandpolicies.aspx)
+-   [联系支持](http://www.websense.com/content/contactSupport.aspx)
+-   [MyWebsense](http://www.websense.com/content/mywebsense-subscriptions.aspx)
+-   [TRITON™ Advisory Board
+    (TAB)](http://www.websense.com/content/websense-triton-advisory-board.aspx)
+
+-   [產品支援](http://www.websense.com/content/SupportByProduct.aspx)
+-   [解決方案中心](http://www.websense.com/content/KnowledgeBase.aspx)
+-   [技術文件庫](http://www.websense.com/content/support/library/technical-library.aspx)
+-   [論壇](http://community.websense.com/forums/)
+-   [工具與策略](http://www.websense.com/content/toolsandpolicies.aspx)
+-   [連絡支援](http://www.websense.com/content/contactSupport.aspx)
+-   [MyWebsense](http://www.websense.com/content/mywebsense-subscriptions.aspx)
+-   [TRITON™ Advisory Board
+    (TAB)](http://www.websense.com/content/websense-triton-advisory-board.aspx)
+
+#### [Partners](/content/websense-partner-programs.aspx)
+
+-   [Find a Partner](/content/find-a-partner.aspx)
+-   [Find a Distributor](/content/find-a-distributor.aspx)
+-   [TRITON Security
+    Alliance](/content/websense-triton-security-alliance.aspx)
+-   [Vendor Alliance](/content/vendor-alliance.aspx)
+-   [Global Partner
+    Program](/content/websense-global-partner-program.aspx)
+-   [OEM Partner
+    Program](/content/websense-oem-partnership-program.aspx)
+-   [Training and Technical
+    Certification](/content/training-and-technical-certification.aspx)
+
+#### [Company](/content/company.aspx)
+
+-   [Management](/content/management.aspx)
+-   [Office of the CSO](/content/websense-office-of-the-cso.aspx)
+-   [Executive Briefing
+    Center](/content/websense-executive-briefing-center.aspx)
+-   [Blogs](https://community.websense.com/blogs/)
+-   [Careers](/content/careers.aspx)
+-   [Join Our Mailing List](/content/opt-in-messaging.aspx)
+-   [Contact Us](/content/contact-us.aspx)
+
+-   [Gerência
+    Executiva](http://www.websense.com/content/management.aspx)
+-   [Relatórios de Analistas do
+    Setor](http://www.websense.com/content/industry-analyst-reports.aspx)
+-   [Social Media Center](https://community.websense.com/blogs/)
+-   [Carreiras](http://www.websense.com/content/careers.aspx)
+-   [Contato](http://www.websense.com/content/contact-us.aspx)
+
+-   [Administración](http://www.websense.com/content/management.aspx)
+-   [Informes de analistas de la
+    industria](http://www.websense.com/content/industry-analyst-reports.aspx)
+-   [Centro de redes sociales](https://community.websense.com/blogs/)
+-   [Oportunidades de
+    empleo](http://www.websense.com/content/careers.aspx)
+-   [Contáctenos](http://www.websense.com/content/contact-us.aspx)
+
+-   [Gestion](http://www.websense.com/content/management.aspx)
+-   [Rapports des
+    analystes](http://www.websense.com/content/industry-analyst-reports.aspx)
+-   [Centre de réseaux sociaux](https://community.websense.com/blogs/)
+-   [Offres d'emploi](http://www.websense.com/content/careers.aspx)
+-   [Nous contacter](http://www.websense.com/content/contact-us.aspx)
+
+-   [Management](http://www.websense.com/content/management.aspx)
+-   [Studien von
+    Branchenanalysten](http://www.websense.com/content/industry-analyst-reports.aspx)
+-   [Zentrum für soziale Medien](https://community.websense.com/blogs/)
+-   [Karriere](http://www.websense.com/content/careers.aspx)
+-   [Kontakt](http://www.websense.com/content/contact-us.aspx)
+
+-   [Gestione](http://www.websense.com/content/management.aspx)
+-   [Report degli analisti di
+    settore](http://www.websense.com/content/industry-analyst-reports.aspx)
+-   [Centro social media](https://community.websense.com/blogs/)
+-   [Opportunità di
+    lavoro](http://www.websense.com/content/careers.aspx)
+-   [Contattaci](http://www.websense.com/content/contact-us.aspx)
+
+-   [管理团队](http://www.websense.com/content/management.aspx)
+-   [行业分析师报告](http://www.websense.com/content/industry-analyst-reports.aspx)
+-   [社交媒体中心](https://community.websense.com/blogs/)
+-   [工作机会](http://www.websense.com/content/careers.aspx)
+-   [联系我们](http://www.websense.com/content/contact-us.aspx)
+
+-   [管理團隊](http://www.websense.com/content/management.aspx)
+-   [業界分析師報告](http://www.websense.com/content/industry-analyst-reports.aspx)
+-   [社交媒體中心](https://community.websense.com/blogs/)
+-   [人才招募](http://www.websense.com/content/careers.aspx)
+-   [聯絡我們](http://www.websense.com/content/contact-us.aspx)
+
+-   [Careers](/content/careers.aspx)
+-   [Contact Us](/content/contact-us.aspx)
+-   [News &
+    Views](http://community.websense.com/blogs/websense-insights/)
+-   [Site Map](http://www.websense.com/content/sitemap.aspx)
+-   [Legal Information](/content/legal.aspx)
+-   [Privacy Policy](/content/privacy-policy.aspx)
+-   ©2013 Websense, Inc. All Rights Reserved.
+-   [](http://community.websense.com/blogs/websense-insights/rss.aspx)
+    [](http://www.youtube.com/user/WBSNMKTG)
+    [](https://plus.google.com/106355883689425591037/about)
+    [](http://www.linkedin.com/company/websense?trk=fc_badge)
+    [](https://twitter.com/websense%20)
+    [](https://community.websense.com/blogs/)
+    [](http://www.facebook.com/websense)
+
+-   [Carreiras](http://www.websense.com/content/careers.aspx)
+-   [Contato](http://www.websense.com/content/contact-us.aspx)
+-   [Notícias](http://community.websense.com/blogs/websense-insights/)
+-   [Mapa do Site](http://www.websense.com/content/sitemap.aspx)
+-   [Informações Jurídicas](http://www.websense.com/content/legal.aspx)
+-   [Política de
+    Privacidade](http://www.websense.com/content/privacy-policy.aspx)
+-   ©2013 Websense, Inc. Todos os Direitos Reservados.
+-   [](http://community.websense.com/blogs/websense-insights/rss.aspx)
+    [](http://www.youtube.com/user/WBSNMKTG)
+    [](https://plus.google.com/106355883689425591037/about)
+    [](http://www.linkedin.com/company/websense?trk=fc_badge)
+    [](http://twitter.com/websensebrasil)
+    [](https://community.websense.com/blogs/)
+    [](http://www.facebook.com/websense)
+
+-   [Oportunidades de
+    empleo](http://www.websense.com/content/careers.aspx)
+-   [Comuníquese con
+    nosotros](http://www.websense.com/content/contact-us.aspx)
+-   [Noticias](http://community.websense.com/blogs/websense-insights/)
+-   [Mapa del sitio](http://www.websense.com/content/sitemap.aspx)
+-   [Información legal](http://www.websense.com/content/legal.aspx)
+-   [Política de
+    privacidad](http://www.websense.com/content/privacy-policy.aspx)
+-   ©2013 Websense, Inc. Todos los derechos reservados.
+-   [](http://community.websense.com/blogs/websense-insights/rss.aspx)
+    [](http://www.youtube.com/user/WBSNMKTG)
+    [](https://plus.google.com/106355883689425591037/about)
+    [](http://www.linkedin.com/company/websense?trk=fc_badge)
+    [](http://twitter.com/websenselatam)
+    [](https://community.websense.com/blogs/)
+    [](http://www.facebook.com/websense)
+
+-   [Offres d'emploi](http://www.websense.com/content/careers.aspx)
+-   [Nous contacter](http://www.websense.com/content/contact-us.aspx)
+-   [Presse](http://community.websense.com/blogs/websense-insights/)
+-   [Plan du site](http://www.websense.com/content/sitemap.aspx)
+-   [Informations légales](http://www.websense.com/content/legal.aspx)
+-   [Politique de
+    confidentialité](http://www.websense.com/content/privacy-policy.aspx)
+-   ©2013 Websense, Inc. Tous droits réservés.
+-   [](http://community.websense.com/blogs/websense-insights/rss.aspx)
+    [](http://www.youtube.com/user/WBSNMKTG)
+    [](https://plus.google.com/106355883689425591037/about)
+    [](http://www.linkedin.com/company/websense?trk=fc_badge)
+    [](https://twitter.com/websense%20)
+    [](https://community.websense.com/blogs/)
+    [](http://www.facebook.com/websense)
+
+-   [Karriere](http://www.websense.com/content/careers.aspx)
+-   [Kontakt](http://www.websense.com/content/contact-us.aspx)
+-   [Neuigkeiten und
+    Meinungen](http://community.websense.com/blogs/websense-insights/)
+-   [Site-Map](http://www.websense.com/content/sitemap.aspx)
+-   [Rechtliche Hinweise](http://www.websense.com/content/legal.aspx)
+-   [Datenschutzrichtlinien](http://www.websense.com/content/privacy-policy.aspx)
+-   ©2013 Websense, Inc. Alle Rechte vorbehalten.
+-   [](http://community.websense.com/blogs/websense-insights/rss.aspx)
+    [](http://www.youtube.com/channel/UC-SEFbs7cYSVD1nTcnQOqjg)
+    [](https://plus.google.com/106355883689425591037/about)
+    [](http://www.linkedin.com/company/websense?trk=fc_badge)
+    [](http://twitter.com/websenseDACH)
+    [](https://community.websense.com/blogs/)
+    [](http://www.facebook.com/websense)
+
+-   [Opportunità di
+    lavoro](http://www.websense.com/content/careers.aspx)
+-   [Contattaci](http://www.websense.com/content/contact-us.aspx)
+-   [Sala
+    Stampa](http://community.websense.com/blogs/websense-insights/)
+-   [Mappa del sito](http://www.websense.com/content/sitemap.aspx)
+-   [Informazioni legali](http://www.websense.com/content/legal.aspx)
+-   [Informativa sulla
+    privacy](http://www.websense.com/content/privacy-policy.aspx)
+-   ©2013 Websense, Inc. Tutti i diritti riservati.
+-   [](http://community.websense.com/blogs/websense-insights/rss.aspx)
+    [](http://www.youtube.com/channel/UCPCMPQkcF1KQ01NtmJ_kcmA)
+    [](https://plus.google.com/106355883689425591037/about)
+    [](http://www.linkedin.com/company/websense?trk=fc_badge)
+    [](https://twitter.com/websense%20)
+    [](https://community.websense.com/blogs/)
+    [](http://www.facebook.com/websense)
+
+-   [工作机会](http://www.websense.com/content/careers.aspx)
+-   [联系我们](http://www.websense.com/content/contact-us.aspx)
+-   [新闻和评论](http://community.websense.com/blogs/websense-insights/)
+-   [网站地图](http://www.websense.com/content/sitemap.aspx)
+-   [法律信息](http://www.websense.com/content/legal.aspx)
+-   [隐私政策](http://www.websense.com/content/privacy-policy.aspx)
+-   ©2013 Websense, Inc. 公司保留所有权利。
+-   [](http://community.websense.com/blogs/websense-insights/rss.aspx)
+    [](http://www.youtube.com/user/WBSNMKTG)
+    [](https://plus.google.com/106355883689425591037/about)
+    [](http://www.linkedin.com/company/websense?trk=fc_badge)
+    [](https://twitter.com/websense%20)
+    [](https://community.websense.com/blogs/)
+    [](http://www.facebook.com/websense)
+
+-   [工作機會](http://www.websense.com/content/careers.aspx)
+-   [聯絡我們](http://www.websense.com/content/contact-us.aspx)
+-   [新聞與檢視](http://community.websense.com/blogs/websense-insights/)
+-   [網站地圖](http://www.websense.com/content/sitemap.aspx)
+-   [法律資訊](http://www.websense.com/content/legal.aspx)
+-   [隱私權保護](http://www.websense.com/content/privacy-policy.aspx)
+-   ©2013 Websense, Inc. 版權所有。
+-   [](http://community.websense.com/blogs/websense-insights/rss.aspx)
+    [](http://www.youtube.com/user/WBSNMKTG)
+    [](https://plus.google.com/106355883689425591037/about)
+    [](http://www.linkedin.com/company/websense?trk=fc_badge)
+    [](https://twitter.com/websense%20)
+    [](https://community.websense.com/blogs/)
+    [](http://www.facebook.com/websense)
 
-**三）****VLAN模式的特点**
-
-VLAN模式的目的是为每个项目提供受保护的网段，具有以下特点：
-
--   NAT实现public ip
--   除了public NAT外没有其它途径进入每个lan
--   受限的流出网络，project-admin可以控制
--   受限的项目之间的访问，同样project-admin控制
--   所以实例和api的连接通过vpn
-
-![../\_images/cloudpipe.png](OpenStack-CloudStack%20Network%20Design_files/image007.png)
-
-图4：VLAN模式OpenStack网络结构
-
- 
-
-**五、网络部署**
-
-1、网络配置
-
-apt-get install bridge-utils
-
-安装bridge-utils就是为了建立虚拟网桥，实现虚拟网络。OpenStack会自动的创建br100这个网桥，所以不用自己创建。
-
---network\_manager=nova.network.manager.FlatDHCPManager
-
-设置网络管理模式，一般使用FlatDHCP，还可以配合multi\_host实现高可用。
-
- 
-
-\# Network Configuration\
- --dhcpbridge\_flagfile=/etc/nova/nova.conf\
- --dhcpbridge=/usr/bin/nova-dhcpbridge\
- --flat\_network\_bridge=br100\
- --flat\_interface=eth1\
- --flat\_injected=False
-
---public\_interface=eth0
-
-dhcpbridge\_flagfile指定配置文件，flat\_injected实现ipv6地址的注入，因此关闭。
-
-flat\_network\_bridge指定网桥。
-
-flat\_interface指定网卡，这个主机节点（一般就是控制节点）用来建立桥，桥接实例和虚拟网络以及public网络。单网卡是设为eth0，与public的同一个。
-
-\#Block of IP addresses that are fixed IPs\
- --fixed\_range=10.0.0.1/27
-
-指定ip池的范围，文中多次提到的从指定的ip池取出ip分配给实例，就是这个ip池。
-
- 
-
-**2、OpenStack中网络的高可用性（HA）**
-
-在基本的网络管理方式中，所有实例的网络流都要经过网络控制器。当网络控制器出现问题时，网络就出现故障，网络控制器是一个SPoF（单故障点）。《[构建OpenStack的高可用性（HA，High
-Availability）](http://blog.csdn.net/hilyoo/article/details/7704280)》简单介绍了4种方法和未来的Quantum。
-
- 
-
-主要的部署方式是FlagDHCP + multi\_host：
-
-1）、每个计算节点安装nova-network，设置multi\_host为true。这样，每个计算节点上flat\_interface作为网桥，提供dhcp、dns，作为其上所有实例的网关（gateway）。实例不再都从控制节点经过，控制节点出现问题不会影响网络。
-
-2）、每个计算节点的flat\_interface提供switch连接，实现实例之间的虚拟网络的传输和通信。
-
-3）、每个计算节点有个public\_interface，与外网连接。
-
-4）、为每个实例分配floating ip，作为实例的第二个虚拟ip，与外网通信。
-
-也就是发生了如下的变化：
-
-![http://my.csdn.net/uploads/201207/07/1341648633\_5324.png](OpenStack-CloudStack%20Network%20Design_files/image008.png)
-
-图5：multi\_host部署方式时的OpenStack网络流
-
-未来的Quantum和Melarge提供更好的网络服务，值得期待。Quantum项目实现二层网络相关的功能，如创建和管理虚拟网络、端口等。Melange负责三层网络相关，它的主要任务是IP地址管理（IPAM）、DHCP、NAT甚至负载均衡。不过由于其实现需要一定的时间，需要多个阶段，现在还是需要了解以上的各种网络模式和部署。
-
-三、CloudStack和OpenStack网络设计比较
-
-从上面他们各自网络设计的介绍，我们可以看出他们都支持两种网络模式：一是类似AWS的扁平网络模式，CloudStack对应基本网络模式，OpenStack对应
-Flat（扁平）和FlatDHCP网络模式；二是VLAN模式。但是，OpenStack所有与外部网络通信都要通过网络控制器，存在SPoF（单故障点）问题，而且如果与外网通信太多，会造成控制节点网络的堵塞或者高负载，这需要其它方法解决。CloudStack通过VR与外部通信不存在SPoF（单故障点）问题。CloudStack的VR提供的网络功能包括NAT、静态NAT、DHCP、DNS、Load
-Balancing、Port Forwording、Firewalls、Site-to-Site
-VPN等。OpenStack的网络控制器支持NAT、DHCP、DNS、Gateway等网络功能。
-
- 
-
- 
-
- 
-
-参考文献：
-
-[http://cloudstack.apache.org/](http://cloudstack.apache.org/)
-
-[http://www.cloudstack-china.org/](http://www.cloudstack-china.org/)
-
-[http://www.openstack.org/](http://www.openstack.org/)
-
-[http://www.openstack.org.cn/](http://www.openstack.org.cn/)
-
-[http://www.cnw.com.cn/news-international/htm2012/20120720\_250599\_4.shtml](http://www.cnw.com.cn/news-international/htm2012/20120720_250599_4.shtml)
-
-[http://baike.baidu.com/link?url=JIG973PiHkx6JgOuVKRSzH0DuFcQZc6lpFN0h1MTq9Tin5RalAMZmwibC8bbauaXAZ9grl6xI8kvTxEkqNQ\_B\_](http://baike.baidu.com/link?url=JIG973PiHkx6JgOuVKRSzH0DuFcQZc6lpFN0h1MTq9Tin5RalAMZmwibC8bbauaXAZ9grl6xI8kvTxEkqNQ_B_)
-
-[http://baike.baidu.com/link?url=zcN4AD4rD8eMMPDLqWneA4JMGW7Ma7fThLGi--7b-35MVXsZ6aS26ZpUityIjfECCeTIypFhW7GBfO3c\_KPTzq](http://baike.baidu.com/link?url=zcN4AD4rD8eMMPDLqWneA4JMGW7Ma7fThLGi--7b-35MVXsZ6aS26ZpUityIjfECCeTIypFhW7GBfO3c_KPTzq)
-
-[http://blog.csdn.net/hilyoo/article/details/7721401](http://blog.csdn.net/hilyoo/article/details/7721401)
-
-[http://www.cloudstack-china.org/2012/07/191.html](http://www.cloudstack-china.org/2012/07/191.html)
-
-[http://www.qyjohn.net/](http://www.qyjohn.net/)
-
- 
-
- 
-
- 
-
- 
