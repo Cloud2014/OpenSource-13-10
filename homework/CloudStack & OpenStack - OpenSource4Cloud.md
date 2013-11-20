@@ -1,8 +1,11 @@
 # CloudStack & OpenStack 两大平台评测#
 
   OpenSource4Cloud
+  
     段孝妍 duanxiaoyan
+	
     职承立
+	
     刘成全 cloud2014
 
 ## 项目介绍 ##
@@ -74,13 +77,22 @@ CloudStack和OpenStack都有许多成功应用，包括商用以及学术及研�
 
 ## 参考资料 ##
 http://cloudstack.apache.org/
+
 http://www.cloudstack-china.org/
+
 http://www.openstack.org/
+
 http://www.openstack.org.cn/
+
 http://www.cnw.com.cn/news-international/htm2012/20120720_250599_4.shtml
+
 http://baike.baidu.com/link?url=JIG973PiHkx6JgOuVKRSzH0DuFcQZc6lpFN0h1MTq9Tin5RalAMZmwibC8bbauaXAZ9grl6xI8kvTxEkqNQ_B_
+
 http://baike.baidu.com/link?url=zcN4AD4rD8eMMPDLqWneA4JMGW7Ma7fThLGi--7b-35MVXsZ6aS26ZpUityIjfECCeTIypFhW7GBfO3c_KPTzq
+
 http://blog.csdn.net/hilyoo/article/details/7721401
+
 http://www.cloudstack-china.org/2012/07/191.html
+
 http://www.qyjohn.net/
 
